@@ -6,7 +6,6 @@ setup(
     author='Geir Tore Ulvik',
     author_email='g.t.ulvik@fys.uio.no',
     description='Scripts and functions for scintillator data import and preparation',
-    include_package_data=True,
     install_requires=[
         "Numpy >= 1.17",
     ],
