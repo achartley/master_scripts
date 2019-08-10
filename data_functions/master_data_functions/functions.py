@@ -52,3 +52,12 @@ def label_simulated_data(energies):
     #labels[:,1] = np.where(energies[:,1] != 0, 1, 0)
             
     return labels
+
+def import_simulated_data(path_to_data):
+    """ Import simulated scintillator data
+
+    param path_to_data: if provided, import all datafiles present in folder.
+    """
+def import_simulated_sample():
+    """ Import small sample of simulated data containing several
+    """
