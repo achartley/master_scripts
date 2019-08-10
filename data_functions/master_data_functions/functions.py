@@ -115,5 +115,3 @@ def label_simulated_data(data):
             
     return labels
 
-if __name__ == "__main__":
-   print(import_data())
