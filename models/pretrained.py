@@ -2,12 +2,16 @@ import numpy as np
 from keras.applications.vgg16 import VGG16
 from keras.applications.vgg16 import preprocess_input
 from keras.engine.input_layer import Input
-
-model = VGG16(weights='imagenet', include_top=False, classes=2)
+from keras.models import Model
+from keras.layers import Dense,Flatten
+from keras import backend as K
 
 def vgg_model(input_dim=(16, 16, 3), output_depth=0):
     """ Setup an instance of the VGG16 model with new input dimensions
-        and a custom depth at which to get the output.
+        and a custom depth at which to get the output. The goal of this
+        model is to extract features from the new input using VGG's existing
+        weights. The features can be stored on their own and the be run
+        through a dense network for classification.
 
         param input_dim:    dimensions of input, (16,16,3) is default for scintillator
         param output_depth: At which layer to get the output from. 0 corresponds
