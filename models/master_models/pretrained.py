@@ -1,9 +1,9 @@
 import numpy as np
 import tensorflow as tf
-from tf.keras.applications.vgg16 import VGG16
-from tf.keras.engine.input_layer import Input
-from tf.keras.models import Model
-from tf.keras.layers import Dense, Flatten
+from tensorflow.keras.applications.vgg16 import VGG16
+from tensorflow.keras import Input
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Dense, Flatten
 
 def vgg_model(input_dim=(16, 16, 3), output_depth=0):
     """ Setup an instance of the VGG16 model with new input dimensions
@@ -18,13 +18,13 @@ def vgg_model(input_dim=(16, 16, 3), output_depth=0):
                             dense layers. ("include_top=False")
     """
     input_layer = Input(shape=input_dim)
-    vgg = VGG16(include_top=False, input_tensor=input_layer, weights='imagenet')
+    vgg = VGG16(include_top=False, weights='imagenet')
 
     # Set output_layer to full model, or to the desired depth if provided.
     if output_depth > 0:
-        output_layer = Flatten()(vgg.layers[-1].output)
+        output_layer = Flatten()(vgg.layers[1:output_depth].output)
     else:
-        output_layer = Flatten()(vgg.layers[output_depth].output)
+        output_layer = Flatten()(vgg.layers[1:6].output)
 
     # Keras infers the tensors between input and output layers.
     model = Model(inputs=input_layer, outputs=output_layer) 
