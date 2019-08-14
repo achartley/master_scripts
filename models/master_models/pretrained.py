@@ -1,10 +1,9 @@
 import numpy as np
-from keras.applications.vgg16 import VGG16
-from keras.applications.vgg16 import preprocess_input
-from keras.engine.input_layer import Input
-from keras.models import Model
-from keras.layers import Dense,Flatten
-from keras import backend as K
+import tensorflow as tf
+from tf.keras.applications.vgg16 import VGG16
+from tf.keras.engine.input_layer import Input
+from tf.keras.models import Model
+from tf.keras.layers import Dense, Flatten
 
 def vgg_model(input_dim=(16, 16, 3), output_depth=0):
     """ Setup an instance of the VGG16 model with new input dimensions
