@@ -2,7 +2,7 @@ import os
 import numpy as np
 
 
-def import_data(folder='sample'):
+def import_data(folder='sample', scaling=True):
     """ Imports scintillator data as numpy arrays.
     Used together with analysis repository which has a strict folder
     structure.
@@ -53,7 +53,7 @@ def import_data(folder='sample'):
         # simulated data can be renamed to something more generic.
 
         if folder in ['simulated', 'sample']:
-            images, energies, positions = separate_simulated_data(full_data)
+            images, energies, positions = separate_simulated_data(full_data, scaling)
             labels = label_simulated_data(full_data)
 
             separated_data["images"] = images
@@ -65,7 +65,7 @@ def import_data(folder='sample'):
 
     return data
     
-def separate_simulated_data(data):    
+def separate_simulated_data(data, scaling):    
     """Takes an imported dataset and separates it into images, energies 
     and positions. Could potientially be expanded to return e.g a Pandas
     datafram if useful.
@@ -83,6 +83,8 @@ def separate_simulated_data(data):
     images = data[:, :n_pixels].reshape(n_img, 16, 16, 1)
     # transpose to correct spatial orientation
     images = np.transpose(images, axes=[0, 2, 1, 3])
+    if scaling:
+        images = normalize_image_data(images)
     
     # Extract energies and positions as array with columns [Energy1, Energy2]
     # and positions array with columns [Xpos1, Ypos1, Xpos2, Ypos2]
@@ -102,7 +104,8 @@ def label_simulated_data(data):
     0 -> single event
     1 -> double event 
     The labels are determined from the energy values, as we know that if 
-    there is no second particle then Energy2 = 0."""
+    there is no second particle then Energy2 = 0.
+    """
     
     # Extract energies as array with columns [Energy1, Energy2]
     n_samples = data.shape[0]
@@ -114,4 +117,13 @@ def label_simulated_data(data):
     labels = np.where(energies[:,1] != 0, 1, 0)
             
     return labels
+
+def normalize_image_data(images):
+    """ Takes an imported set of images and normalizes values to between
+    0 and 1 using min-max scaling across the whole image set.
+    """
+    x_max = np.amax(images)
+    x_min = np.amin(images)
+    images = (images - np.mean(images)) / (x_max - x_min)
+    return images
 
