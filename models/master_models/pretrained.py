@@ -1,35 +1,70 @@
 import numpy as np
+from importlib import import_module
 import tensorflow as tf
-from tensorflow.keras.applications.vgg16 import VGG16
+import tensorflow.keras.applications as tfapps
 from tensorflow.keras import Input
 from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.layers import Dense, Flatten
 
-def vgg_model(input_dim=(16, 16, 3), output_depth=9):
-    """ Setup an instance of the VGG16 model with new input dimensions
-        and a custom depth at which to get the output. The goal of this
-        model is to extract features from the new input using VGG's existing
-        weights. The features can be stored on their own and the be run
-        through a dense network for classification.
+def pretrained_model(which_model="VGG16", input_dim=(16, 16, 3), output_depth=9):
+    """ Setup an instance of any model available in tensorflow.keras with 
+        new input dimensions and a custom depth at which to get the output. 
+        The goal of this model is to extract features from the new input using 
+        pretrained weights from imagenet. 
 
+        param which_model:  string, which model to use. Defaults to VGG16
         param input_dim:    dimensions of input, (16,16,3) is default for scintillator
         param output_depth: At which layer to get the output from. 0 corresponds
                             to the full model up to, but not including the
                             dense layers. ("include_top=False")
     """
+
+    # Dictionary of possible models and their import statements
+    available_models = {
+            "DenseNet121":".densenet",
+            "DenseNet169":".densenet",
+            "DenseNet201":".densenet",
+            "InceptionResNetV2":".inception_resnet_v2",
+            "InceptionV3":".inception_v3",
+            "MobileNet":".mobilenet",
+            "MobileNetV2":".mobilenet_v2",
+            "NASNetLarge":".nasnet",
+            "NasNetMobile":".nasnet",
+            "ResNet50":".resnet50",
+            "VGG16":".vgg16",
+            "VGG19":".vgg19",
+            "Xception":".xception",
+            }
+
+    # Check if input model is valid
+    if which_model not in available_models.keys():
+        print("Model not valid. Possible models are:")
+        print(available_models)
+        exit(1)
+
+    # import correct module
+    base_name = "tensorflow.keras.applications"
+    module_name = base_name + available_models[which_model]
+    module = import_module(module_name)
+
+    # Load the actual function which lets us create a new instance of a model
+    pretrained = getattr(module, which_model)(include_top=False, weights='imagenet')
+
     # Create new input layer
     input_layer = Input(shape=input_dim)
 
-    # Load vgg16
-    vgg = VGG16(include_top=False, weights='imagenet')
 
     # Add input layer and desired amount of vgg16 layers to new model
     model = Sequential()
     model.add(input_layer)
     for i in range(1, output_depth):
-        model.add(vgg.layers[i])
+        model.add(pretrained.layers[i])
 
     # Flatten layer to prep for inputting to dense
     model.add(Flatten())
+    model.summary()
 
     return model
+
+if __name__ == "__main__":
+    pretrained_model("DenseNet121")
