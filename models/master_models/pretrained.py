@@ -53,7 +53,6 @@ def pretrained_model(which_model="VGG16", input_dim=(16, 16, 3), output_depth=9)
     # Create new input layer
     input_layer = Input(shape=input_dim)
 
-
     # Add input layer and desired amount of vgg16 layers to new model
     model = Sequential()
     model.add(input_layer)
@@ -62,7 +61,6 @@ def pretrained_model(which_model="VGG16", input_dim=(16, 16, 3), output_depth=9)
 
     # Flatten layer to prep for inputting to dense
     model.add(Flatten())
-    model.summary()
 
     return model
 
