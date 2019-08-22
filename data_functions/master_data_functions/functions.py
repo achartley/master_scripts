@@ -2,7 +2,7 @@ import os
 import numpy as np
 
 
-def import_data(folder='sample', scaling=True):
+def import_data(folder='sample', filename=None, num_samples=None, scaling=True):
     """ Imports scintillator data as numpy arrays.
     Used together with analysis repository which has a strict folder
     structure.
@@ -11,7 +11,17 @@ def import_data(folder='sample', scaling=True):
         'real'      ->  real data from scintillator experiment
         'sample'    ->  sample data (simulated)
         'simulated' ->  simulated data from scintillator
-                    
+
+    param filename: Which file to load. If not provided, attempts to load
+                    all files in folder
+
+    param num_samples:  How many samples to include. With large files,  
+                        memory might become an issue when loading full file.
+                        If specified, the returned data will be a random,
+                        balanced selection of data from the full dataset.
+
+    param scaling:  Whether or not to scale the image data to 0-1 interval.
+                    Defaults to True.
 
     returns:    dictionary of data where each filenames are keys and each
                 key,value pair contains dictionary of the data in the file,
@@ -36,35 +46,108 @@ def import_data(folder='sample', scaling=True):
     # 'images', and 'labels'
     data = {}
 
-    data_dir = os.scandir(DATA_PATH)
-    for FILE_PATH in data_dir:
-        filename = os.path.splitext(FILE_PATH.name)[0] # Don't need file extension
+    if filename is None:
+        #import the whole dir
+        data_dir = os.scandir(DATA_PATH)
+        for FILE_PATH in data_dir:
+            tmp_filename = os.path.splitext(FILE_PATH.name)[0] # Don't need file extension
 
-        # Skip this file if it's the README file
-        if "README" in filename:
-            continue
+            # Skip this file if it's the README file
+            if "README" in tmp_filename:
+                continue
 
-        # Load data
-        full_data = np.loadtxt(FILE_PATH.path)
+            # Load data
+            full_data = np.loadtxt(FILE_PATH.path)
+            separated_data = {}
+            
+            # Currently uncertain if real data has same form as simulated.
+            # If so, the if-test here can be discarded, and functions for
+            # simulated data can be renamed to something more generic.
+
+            if folder in ['simulated', 'sample']:
+                images, energies, positions = separate_simulated_data(full_data, scaling)
+                labels = label_simulated_data(full_data)
+
+                separated_data["images"] = images
+                separated_data["energies"] = energies
+                separated_data["positions"] = positions
+                separated_data["labels"] = labels
+
+            data[tmp_filename] = separated_data
+    else:
         separated_data = {}
+
+        # need temporary lists that we can append to and convert to arrays
+        # when import is done
+        images = []
+        energies = []
+        positions = []
+        labels = []
         
-        # Currently uncertain if real data has same form as simulated.
-        # If so, the if-test here can be discarded, and functions for
-        # simulated data can be renamed to something more generic.
+        # read line by line to alleviate memory strain when files are large
+        with open(DATA_PATH+filename) as infile:
+            line = infile.readline()
+            while line:
+                image, energy, position = separate_simulated_data(line, scale)
+                label = label_simulated_data(line)
 
-        if folder in ['simulated', 'sample']:
-            images, energies, positions = separate_simulated_data(full_data, scaling)
-            labels = label_simulated_data(full_data)
+                images.append(image)
+                energies.append(energy)
+                positions.append(position)
+                labels.append(label)
 
-            separated_data["images"] = images
-            separated_data["energies"] = energies
-            separated_data["positions"] = positions
-            separated_data["labels"] = labels
+        # Convert the lists to arrays
+        images = np.array(images)
+        energies = np.array(energies)
+        positions = np.array(positions)
+        labels = np.array(labels)
 
+
+        # Pick a num_samples randomly selected samples such that the returned
+        # dataset contains a balanced number of single and double events.
+        if num_samples is not None and int(num_samples) < len(images):
+
+            # Convert to int so number can be provided on scientific form ex. 1e5
+            num_samples = int(num_samples)
+
+            # Get separate indices for single and double events based on labels
+            single_indices = np.where(labels == 0)
+            double_indices = np.where(labels == 1)
+
+            # Handle cases where number of samples is not an even number
+            if num_samples % 2 != 0:
+                num_double = num_samples//2
+                num_single = num_double + 1
+            else:
+                num_single = num_double = num_samples//2
+
+            # Handle cases where dataset contains fewer than num_samples/2 of
+            # an event type
+            if len(single_indices) < num_single:
+                num_single = len(single_indices)
+            if len(double_indices) < num_double:
+                num_double = len(double_indices)
+
+            # Draw random indices single and double indices
+            single_out = np.random.choice(single_indices, size=num_single, replace=False)
+            double_out = np.random.choice(double_indices, size=num_double, replace=False)
+
+            # Concatenate the selected images, energies, positions and labels.
+            images = np.concatenate((images[single_out], images[double_out]))
+            energies = np.concatenate((energies[single_out], energies[double_out]))
+            positions = np.concatenate((positions[single_out], positions[double_out]))
+            labels = np.concatenate((labels[single_out], labels[double_out]))
+
+        # Store the data for return
+        separated_data["images"] = images
+        separated_data["energies"] = energies
+        separated_data["positions"] = positions
+        separated_data["labels"] = labels
+        
         data[filename] = separated_data
 
     return data
-    
+
 def separate_simulated_data(data, scaling):    
     """Takes an imported dataset and separates it into images, energies 
     and positions. Could potientially be expanded to return e.g a Pandas
@@ -76,6 +159,11 @@ def separate_simulated_data(data, scaling):
         
     returns: list, [images, energies, positions]
     """
+
+    # If data is just one line, reshape to (1, data.shape)
+    if len(data.shape) < 2:
+        data = data.reshape((1, len(data))
+    
     n_pixels = data.shape[1] - 6 #account for 6 non-pixel values
     n_img = data.shape[0] # Number of sample images
     
@@ -108,6 +196,8 @@ def label_simulated_data(data):
     """
     
     # Extract energies as array with columns [Energy1, Energy2]
+    if len(data.shape) < 2:
+        data = data.reshape((1, data.shape))
     n_samples = data.shape[0]
     n_pixels = 256 # The images are a 16x16 grid, flattened
     energy1 = data[:, n_pixels].reshape(n_samples, 1) # reshape for stacking
