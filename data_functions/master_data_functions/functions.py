@@ -50,7 +50,7 @@ def import_data(folder='sample', filename=None, num_samples=None, scaling=True):
         #import the whole dir
         data_dir = os.scandir(DATA_PATH)
         for FILE_PATH in data_dir:
-            tmp_filename = os.path.splitext(FILE_PATH.name)[0] # Don't need file extension
+            tmp_filename = FILE_PATH.name
 
             # Skip this file if it's the README file
             if "README" in tmp_filename:
@@ -77,18 +77,17 @@ def import_data(folder='sample', filename=None, num_samples=None, scaling=True):
     else:
         separated_data = {}
 
-        # need temporary lists that we can append to and convert to arrays
-        # when import is done
+        # Temporary initialization of arrays-to-be
         images = []
         energies = []
         positions = []
         labels = []
-        
+
         # read line by line to alleviate memory strain when files are large
-        with open(DATA_PATH+filename) as infile:
-            line = infile.readline()
-            while line:
-                image, energy, position = separate_simulated_data(line, scale)
+        with open(DATA_PATH+filename, "r") as infile:
+            for line in infile:
+                line = np.fromstring(line, sep=' ')
+                image, energy, position = separate_simulated_data(line, scaling)
                 label = label_simulated_data(line)
 
                 images.append(image)
@@ -96,11 +95,16 @@ def import_data(folder='sample', filename=None, num_samples=None, scaling=True):
                 positions.append(position)
                 labels.append(label)
 
-        # Convert the lists to arrays
+        # Convert lists to numpy arrays and reshape them to remove the added axis from
+        # conversion. TODO: Find a better way to do this.
         images = np.array(images)
         energies = np.array(energies)
         positions = np.array(positions)
         labels = np.array(labels)
+
+        images = images.reshape(images.shape[0], images.shape[2], images.shape[3], images.shape[4])
+        energies = energies.reshape(energies.shape[0], energies.shape[2])
+        positions = positions.reshape(positions.shape[0], positions.shape[2])
 
 
         # Pick a num_samples randomly selected samples such that the returned
@@ -111,8 +115,8 @@ def import_data(folder='sample', filename=None, num_samples=None, scaling=True):
             num_samples = int(num_samples)
 
             # Get separate indices for single and double events based on labels
-            single_indices = np.where(labels == 0)
-            double_indices = np.where(labels == 1)
+            single_indices = np.array(np.where(labels == 0)[0])
+            double_indices = np.array(np.where(labels == 1)[0])
 
             # Handle cases where number of samples is not an even number
             if num_samples % 2 != 0:
@@ -133,10 +137,10 @@ def import_data(folder='sample', filename=None, num_samples=None, scaling=True):
             double_out = np.random.choice(double_indices, size=num_double, replace=False)
 
             # Concatenate the selected images, energies, positions and labels.
-            images = np.concatenate((images[single_out], images[double_out]))
-            energies = np.concatenate((energies[single_out], energies[double_out]))
-            positions = np.concatenate((positions[single_out], positions[double_out]))
-            labels = np.concatenate((labels[single_out], labels[double_out]))
+            images = np.concatenate((images[single_out], images[double_out]), axis=0)
+            energies = np.concatenate((energies[single_out], energies[double_out]), axis=0)
+            positions = np.concatenate((positions[single_out], positions[double_out]), axis=0)
+            labels = np.concatenate((labels[single_out], labels[double_out]), axis=0)
 
         # Store the data for return
         separated_data["images"] = images
@@ -150,23 +154,26 @@ def import_data(folder='sample', filename=None, num_samples=None, scaling=True):
 
 def separate_simulated_data(data, scaling):    
     """Takes an imported dataset and separates it into images, energies 
-    and positions. Could potientially be expanded to return e.g a Pandas
-    datafram if useful.
-    
-    Datafile info:
+    and positions.
+
+    Data info:
     The first 256 values in each row correspond to the 16x16 detector image and
     the last 6 values correspond to Energy1, Xpos1, Ypos1, Energy2, Xpos2, Ypos2.
+
+    param data: array of one or more lines from datafile
+    param scaling: Boolean, scale images to 0-1 or not.
+    
         
     returns: list, [images, energies, positions]
     """
 
     # If data is just one line, reshape to (1, data.shape)
     if len(data.shape) < 2:
-        data = data.reshape((1, len(data))
+        data = data.reshape((1, len(data)))
     
     n_pixels = data.shape[1] - 6 #account for 6 non-pixel values
     n_img = data.shape[0] # Number of sample images
-    
+
     # reshape to image dims (batch, rows, cols, channels)
     images = data[:, :n_pixels].reshape(n_img, 16, 16, 1)
     # transpose to correct spatial orientation
@@ -197,7 +204,7 @@ def label_simulated_data(data):
     
     # Extract energies as array with columns [Energy1, Energy2]
     if len(data.shape) < 2:
-        data = data.reshape((1, data.shape))
+        data = data.reshape((1,)+data.shape)
     n_samples = data.shape[0]
     n_pixels = 256 # The images are a 16x16 grid, flattened
     energy1 = data[:, n_pixels].reshape(n_samples, 1) # reshape for stacking
