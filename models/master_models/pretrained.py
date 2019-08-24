@@ -59,12 +59,12 @@ def pretrained_model(which_model="VGG16", input_dim=(16, 16, 3), output_depth=No
     model = Sequential()
     model.add(input_layer)
     if output_depth is not None:
-        pretrained_layers = pretrained.layers[1:output_depth]
+        for layer in pretrained.layers[1:output_depth]:
+            model.add(layer)
     else:
-        pretrained_layers = pretrained.layers
+        for layer in pretrained.layers:
+            model.add(layer)
 
-    for layer in pretrained_layers:
-        model.add(layer)
 
     # Flatten layer to prep for inputting to dense
     model.add(Flatten())
