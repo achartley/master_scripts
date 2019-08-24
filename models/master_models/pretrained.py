@@ -6,7 +6,7 @@ from tensorflow.keras import Input
 from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.layers import Dense, Flatten
 
-def pretrained_model(which_model="VGG16", input_dim=(16, 16, 3), output_depth=9):
+def pretrained_model(which_model="VGG16", input_dim=(16, 16, 3), output_depth=None):
     """ Setup an instance of any model available in tensorflow.keras with 
         new input dimensions and a custom depth at which to get the output. 
         The goal of this model is to extract features from the new input using 
@@ -14,9 +14,11 @@ def pretrained_model(which_model="VGG16", input_dim=(16, 16, 3), output_depth=9)
 
         param which_model:  string, which model to use. Defaults to VGG16
         param input_dim:    dimensions of input, (16,16,3) is default for scintillator
-        param output_depth: At which layer to get the output from. 0 corresponds
-                            to the full model up to, but not including the
+        param output_depth: At which layer to get the output from. If not provided
+                            returns full model (default) up to, but not including the
                             dense layers. ("include_top=False")
+                            Same happens if provided depth is larger than number
+                            of layers.
     """
 
     # Dictionary of possible models and their import statements
@@ -29,7 +31,7 @@ def pretrained_model(which_model="VGG16", input_dim=(16, 16, 3), output_depth=9)
             "MobileNet":".mobilenet",
             "MobileNetV2":".mobilenet_v2",
             "NASNetLarge":".nasnet",
-            "NasNetMobile":".nasnet",
+            "NASNetMobile":".nasnet",
             "ResNet50":".resnet50",
             "VGG16":".vgg16",
             "VGG19":".vgg19",
@@ -53,11 +55,16 @@ def pretrained_model(which_model="VGG16", input_dim=(16, 16, 3), output_depth=9)
     # Create new input layer
     input_layer = Input(shape=input_dim)
 
-    # Add input layer and desired amount of vgg16 layers to new model
+    # Add input layer and desired amount of pretrained layers to new model
     model = Sequential()
     model.add(input_layer)
-    for i in range(1, output_depth):
-        model.add(pretrained.layers[i])
+    if output_depth is not None:
+        pretrained_layers = pretrained.layers[1:output_depth]
+    else:
+        pretrained_layers = pretrained.layers
+
+    for layer in pretrained_layers:
+        model.add(layer)
 
     # Flatten layer to prep for inputting to dense
     model.add(Flatten())
