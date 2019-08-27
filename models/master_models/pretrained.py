@@ -59,12 +59,25 @@ def pretrained_model(which_model="VGG16", input_dim=(16, 16, 3), output_depth=No
     model = Sequential()
     model.add(input_layer)
     if output_depth is not None:
-        for layer in pretrained.layers[1:output_depth]:
-            model.add(layer)
+        for i in range(1, output_depth):
+            try:
+                model.add(pretrained.layers[i])
+            except IndexError:
+                # Break if output_depth provided is deeper than model.
+                break
+            except ValueError:
+                # Break if sequential model doesn't support the layer.
+                break
     else:
-        for layer in pretrained.layers:
-            model.add(layer)
-
+        for i in range(1, len(pretrained.layers)):
+            try:
+                model.add(pretrained.layers[i])
+            except IndexError:
+                # Break if output_depth provided is deeper than model.
+                break
+            except ValueError:
+                # Break if sequential model doesn't support the layer.
+                break
 
     # Flatten layer to prep for inputting to dense
     model.add(Flatten())

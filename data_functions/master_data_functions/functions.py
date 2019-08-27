@@ -224,3 +224,20 @@ def normalize_image_data(images):
     images = (images - np.mean(images)) / (x_max - x_min)
     return images
 
+def save_feature_representation(features, filename):
+    """ Takes a set of data represented as features (after being) fed
+    though a trained network, and saves it as a numpy object.
+
+    param feature: The features to be saved.
+
+    """
+
+    OUTPUT_PATH = '../../data/output/'
+    np.save(OUTPUT_PATH+filename, features)
+
+def load_feature_representation(filename):
+    """ Given a filename, load a numpy file object from the output folder
+    matching the filename.
+    """
+    OUTPUT_PATH = '../../data/output/'
+    return np.load(OUTPUT_PATH+filename)
