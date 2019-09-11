@@ -229,7 +229,6 @@ def save_feature_representation(features, filename):
     though a trained network, and saves it as a numpy object.
 
     param feature: The features to be saved.
-
     """
 
     OUTPUT_PATH = '../../data/output/'
@@ -241,3 +240,29 @@ def load_feature_representation(filename):
     """
     OUTPUT_PATH = '../../data/output/'
     return np.load(OUTPUT_PATH+filename)
+
+def save_model(filename):
+    raise NotImplemented
+
+def load_model(filename):
+    raise NotImplemented
+
+def double_event_distance(results, positions):
+    """ Calculates the distance between events for double events in the dataset
+
+    param results: Array of correct and incorrect classifications. 1 = correct
+                    0 = wrong.
+    param positions: Array of positions for the dataset
+    
+    returns: Array of [result, distances]
+    """
+    indices = np.where(positions[:,2] != -100)
+    dist = positions[indices]
+    dist = np.abs(dist[:,0:2]-dist[:,2:])
+
+    res = results[indices]
+
+    double_distances = np.concatenate((res, dist), axis=1)
+
+    return double_distances
+
