@@ -261,6 +261,7 @@ def double_event_distance(results, positions):
     dist = np.abs(dist[:,0:2]-dist[:,2:])
 
     res = results[indices]
+    res = res.reshape((len(res), 1))
 
     double_distances = np.concatenate((res, dist), axis=1)
 
