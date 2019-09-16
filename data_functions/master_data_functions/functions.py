@@ -247,18 +247,31 @@ def save_model(filename):
 def load_model(filename):
     raise NotImplemented
 
-def double_event_distance(results, positions):
-    """ Calculates the distance between events for double events in the dataset
 
-    param results: Array of correct and incorrect classifications. 1 = correct
-                    0 = wrong.
+def calc_event_distance(positions):
+    """ Calculates the distance between events in a set of double events.
+    """
+    
+    dist = positions[:,0:2] - positions[:,2:]
+    dist = np.sum(np.sqrt(dist*dist), axis=1)
+    dist = dist.reshape(len(dist), 1)
+
+    return dist
+def double_event_distance(results, positions):
+    """ Calculates the distance between events for double events in the 
+    dataset.
+
+    TODO: THIS SHIT IS REDUNDANT, READUNADANATA
+
+    param results:  Array of classes as predicted by model. 
+                    0 = single event, 1 = double event
+
     param positions: Array of positions for the dataset
     
     returns: Array of [result, distances]
     """
     indices = np.where(positions[:,2] != -100)
-    dist = positions[indices]
-    dist = np.abs(dist[:,0:2]-dist[:,2:])
+    dist = calc_event_distance(positions[indices])
 
     res = results[indices]
     res = res.reshape((len(res), 1))
@@ -266,4 +279,23 @@ def double_event_distance(results, positions):
     double_distances = np.concatenate((res, dist), axis=1)
 
     return double_distances
+
+def get_close_events(positions):
+    """ Returns indices of events with a distance lower than a certain 
+    threshold to do further training on.
+
+    TODO: RENAME TO INDICATE THAT IT GETS INDICES, NOT THE ACTUAL EVENTS
+
+    param events:   initial training data for the model
+    param positions: positions for the training data
+
+    returns:    Indices of all double events and indices for the subset of
+                double events which are 'close' events.
+    """
+    indices_double = np.where(positions[:,2] != -100)
+    dist = calc_event_distance(positions[indices_double])
+    indices_close = np.where(dist < 3.0)[0]
+    
+    return indices_double, indices_close
+    
 
