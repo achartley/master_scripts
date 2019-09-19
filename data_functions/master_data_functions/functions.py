@@ -248,30 +248,64 @@ def load_model(filename):
     raise NotImplemented
 
 
-def calc_event_distance(positions):
-    """ Calculates the distance between events in a set of double events.
+# TODO: Rewrite to simply take all positions from dataset and return an
+# array of relative distances.
+def relative_distance(positions):
+    """ Calculates the relative distance between events in a set of events.
+    
+    param positions: Array of positions for the dataset (x0, y0, x1, y1)
+    """
+   
+    # Single events have the x1, y1 positions set to -100. We don't want to
+    # do anything about those and simply set the relative distance to -100.
+    double_indices = np.where(positions[:,2] != -100)
+    single_indices = np.where(positions[:,2] == -100)
+   
+    relative_dist = np.zeros((positions.shape[0], 1))
+    relative_dist[single_indices] = -100
+
+    # Standard euclidian distance between points 
+    # np.sqrt((x0-x1)**2 + (y0-y1)**2)
+    relative_dist[double_indices] = np.sqrt(np.sum(
+            (positions[double_indices, 0:2] - positions[double_indices, 2:])
+            * (positions[double_indices, 0:2] - positions[double_indices, 2:]),
+            axis=1))
+
+    return relative_dist
+
+def relative_energy(energies):
+    """ Calculates the relative energy between event 1 and event 2 for all
+    samples in a dataset which have two events.
     """
     
-    dist = positions[:,0:2] - positions[:,2:]
-    dist = np.sum(np.sqrt(dist*dist), axis=1)
-    dist = dist.reshape(len(dist), 1)
+    # Single events have the E2 energy to 0. We don't want to
+    # do anything about those and simply set the relative energy to -100.
+    # (There is a chance a double event has same energy and thus gives 
+    # relative energy = 0, thus -100 is a safer choice of single event default)
+    double_indices = np.where(energies[:, 1] != 0)
+    single_indices = np.where(energies[:, 2] == 0)
+   
+    relative_energies = np.zeros((energies.shape[0], 1))
+    relative_energies[single_indices] = -100
 
-    return dist
+    relative_energies[double_indices] = np.abs(
+            energies[double_indices, 0] - energies[double_indices, 1])
+    
+    return relative_energies
+
+# TODO: This function is redundant -> to be removed
 def double_event_distance(results, positions):
     """ Calculates the distance between events for double events in the 
     dataset.
 
-    TODO: THIS SHIT IS REDUNDANT, READUNADANATA
-
     param results:  Array of classes as predicted by model. 
                     0 = single event, 1 = double event
 
-    param positions: Array of positions for the dataset
     
     returns: Array of [result, distances]
     """
     indices = np.where(positions[:,2] != -100)
-    dist = calc_event_distance(positions[indices])
+    dist = calc_relative_distance(positions[indices])
 
     res = results[indices]
     res = res.reshape((len(res), 1))
@@ -280,22 +314,22 @@ def double_event_distance(results, positions):
 
     return double_distances
 
-def get_close_events(positions):
+def event_indices(positions, threshold=3.0):
     """ Returns indices of events with a distance lower than a certain 
     threshold to do further training on.
 
-    TODO: RENAME TO INDICATE THAT IT GETS INDICES, NOT THE ACTUAL EVENTS
+    param positions:    array of positions (x0, y0, x1, y1)
+    param threshold:    float, the threshold which determines what is a
+                        'close' event.
 
-    param events:   initial training data for the model
-    param positions: positions for the training data
-
-    returns:    Indices of all double events and indices for the subset of
-                double events which are 'close' events.
+    returns:    Indices for single events, double events, and for the subset 
+                of double events which are 'close' events.
     """
-    indices_double = np.where(positions[:,2] != -100)
+    indices_single = np.where(positions[:, 2] == -100)
+    indices_double = np.where(positions[:, 2] != -100)
     dist = calc_event_distance(positions[indices_double])
-    indices_close = np.where(dist < 3.0)[0]
+    indices_close = np.where(dist < threshold)[0]
     
-    return indices_double, indices_close
+    return indices_single, indices_double, indices_close
     
 
