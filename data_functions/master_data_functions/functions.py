@@ -247,13 +247,31 @@ def save_model(filename):
 def load_model(filename):
     raise NotImplemented
 
+def event_indices(positions, threshold=3.0):
+    """ Returns indices of events with a distance lower than a certain 
+    threshold to do further training on.
 
-# TODO: Rewrite to simply take all positions from dataset and return an
-# array of relative distances.
+    param positions:    array of positions (x0, y0, x1, y1)
+    param threshold:    float, the threshold which determines what is a
+                        'close' event.
+
+    returns:    Indices for single events, double events, and for the subset 
+                of double events which are 'close' events.
+    """
+    indices_single = np.where(positions[:, 2] == -100)
+    indices_double = np.where(positions[:, 2] != -100)
+    dist = calc_event_distance(positions[indices_double])
+    indices_close = np.where(dist <= threshold)[0]
+    
+    return indices_single, indices_double, indices_close
+
 def relative_distance(positions):
     """ Calculates the relative distance between events in a set of events.
     
     param positions: Array of positions for the dataset (x0, y0, x1, y1)
+
+    return: 1D array of relative distances between events.
+            single events have relative distance set to -100
     """
    
     # Single events have the x1, y1 positions set to -100. We don't want to
@@ -276,6 +294,12 @@ def relative_distance(positions):
 def relative_energy(energies):
     """ Calculates the relative energy between event 1 and event 2 for all
     samples in a dataset which have two events.
+
+    param energies: Energies of events in the dataset, (E0, E1). For single
+                    events the energy of 'event 2' is set to 0 in the dataset.
+
+    return: 1D array of relative energies. single events have relative energy
+            set to -100.
     """
     
     # Single events have the E2 energy to 0. We don't want to
@@ -292,44 +316,4 @@ def relative_energy(energies):
             energies[double_indices, 0] - energies[double_indices, 1])
     
     return relative_energies
-
-# TODO: This function is redundant -> to be removed
-def double_event_distance(results, positions):
-    """ Calculates the distance between events for double events in the 
-    dataset.
-
-    param results:  Array of classes as predicted by model. 
-                    0 = single event, 1 = double event
-
-    
-    returns: Array of [result, distances]
-    """
-    indices = np.where(positions[:,2] != -100)
-    dist = calc_relative_distance(positions[indices])
-
-    res = results[indices]
-    res = res.reshape((len(res), 1))
-
-    double_distances = np.concatenate((res, dist), axis=1)
-
-    return double_distances
-
-def event_indices(positions, threshold=3.0):
-    """ Returns indices of events with a distance lower than a certain 
-    threshold to do further training on.
-
-    param positions:    array of positions (x0, y0, x1, y1)
-    param threshold:    float, the threshold which determines what is a
-                        'close' event.
-
-    returns:    Indices for single events, double events, and for the subset 
-                of double events which are 'close' events.
-    """
-    indices_single = np.where(positions[:, 2] == -100)
-    indices_double = np.where(positions[:, 2] != -100)
-    dist = calc_event_distance(positions[indices_double])
-    indices_close = np.where(dist < threshold)[0]
-    
-    return indices_single, indices_double, indices_close
-    
 
