@@ -258,10 +258,10 @@ def event_indices(positions, threshold=3.0):
     returns:    Indices for single events, double events, and for the subset 
                 of double events which are 'close' events.
     """
-    indices_single = np.where(positions[:, 2] == -100)
-    indices_double = np.where(positions[:, 2] != -100)
-    dist = calc_event_distance(positions[indices_double])
-    indices_close = np.where(dist <= threshold)[0]
+    indices_single = np.where(positions[:, 2] == -100)[0]
+    indices_double = np.where(positions[:, 2] != -100)[0]
+    dist = relative_distance(positions)
+    indices_close = np.nonzero((dist != -100) == (dist < threshold))[0]
     
     return indices_single, indices_double, indices_close
 
@@ -276,8 +276,8 @@ def relative_distance(positions):
    
     # Single events have the x1, y1 positions set to -100. We don't want to
     # do anything about those and simply set the relative distance to -100.
-    double_indices = np.where(positions[:,2] != -100)
-    single_indices = np.where(positions[:,2] == -100)
+    double_indices = np.where(positions[:,2] != -100)[0]
+    single_indices = np.where(positions[:,2] == -100)[0]
    
     relative_dist = np.zeros((positions.shape[0], 1))
     relative_dist[single_indices] = -100
@@ -285,9 +285,8 @@ def relative_distance(positions):
     # Standard euclidian distance between points 
     # np.sqrt((x0-x1)**2 + (y0-y1)**2)
     relative_dist[double_indices] = np.sqrt(np.sum(
-            (positions[double_indices, 0:2] - positions[double_indices, 2:])
-            * (positions[double_indices, 0:2] - positions[double_indices, 2:]),
-            axis=1))
+            (positions[double_indices, 0:2] - positions[double_indices, 2:])**2,
+            axis=1)).reshape(len(double_indices), 1)
 
     return relative_dist
 
@@ -306,14 +305,14 @@ def relative_energy(energies):
     # do anything about those and simply set the relative energy to -100.
     # (There is a chance a double event has same energy and thus gives 
     # relative energy = 0, thus -100 is a safer choice of single event default)
-    double_indices = np.where(energies[:, 1] != 0)
-    single_indices = np.where(energies[:, 2] == 0)
+    double_indices = np.where(energies[:, 1] != 0)[0]
+    single_indices = np.where(energies[:, 1] == 0)[0]
    
     relative_energies = np.zeros((energies.shape[0], 1))
     relative_energies[single_indices] = -100
 
     relative_energies[double_indices] = np.abs(
-            energies[double_indices, 0] - energies[double_indices, 1])
+            energies[double_indices, 0] - energies[double_indices, 1]).reshape(len(double_indices), 1)
     
     return relative_energies
 
