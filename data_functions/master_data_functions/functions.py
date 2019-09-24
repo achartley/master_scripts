@@ -276,8 +276,8 @@ def relative_distance(positions):
    
     # Single events have the x1, y1 positions set to -100. We don't want to
     # do anything about those and simply set the relative distance to -100.
-    double_indices = np.where(positions[:,2] != -100)[0]
-    single_indices = np.where(positions[:,2] == -100)[0]
+    single_indices = np.where(positions[:, 2] == -100)[0]
+    double_indices = np.where(positions[:, 2] != -100)[0]
    
     relative_dist = np.zeros((positions.shape[0], 1))
     relative_dist[single_indices] = -100
