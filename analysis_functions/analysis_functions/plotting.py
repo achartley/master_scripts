@@ -5,9 +5,9 @@ from sklearn.metrics import confusion_matrix
 # This plotting function is fetched from the scikit-learn's example
 # https://scikit-learn.org/stable/auto_examples/model_selection/plot_confusion_matrix.html
 def plot_confusion_matrix(y_true, y_pred, classes,
-                          normalize=False,
-                          title=None,
-                          cmap=plt.cm.Blues):
+        normalize=False,
+        title=None,
+        cmap=plt.cm.Blues):
     """
     This function prints and plots the confusion matrix.
     Normalization can be applied by setting `normalize=True`.
@@ -28,22 +28,23 @@ def plot_confusion_matrix(y_true, y_pred, classes,
         print('Confusion matrix, without normalization')
 
     print(cm)
-
     fig, ax = plt.subplots()
     im = ax.imshow(cm, interpolation='nearest', cmap=cmap)
     ax.figure.colorbar(im, ax=ax)
-    # We want to show all ticks...
-    ax.set(xticks=np.arange(cm.shape[1]),
-           yticks=np.arange(cm.shape[0]),
-           # ... and label them with the respective list entries
-           xticklabels=classes, yticklabels=classes,
-           title=title,
-           ylabel='True label',
-           xlabel='Predicted label')
+
+    # Set ticks and label them
+    ax.set_xticks(np.arange(cm.shape[1]))
+    ax.set_yticks(np.arange(cm.shape[0]))
+    ax.set_xticklabels(classes)
+    ax.set_yticklabels(classes)
+    ax.set_title(title)
+    ax.set_ylabel('True label')
+    ax.set_xlabel('Predicted label')
 
     # Rotate the tick labels and set their alignment.
     plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
-             rotation_mode="anchor")
+            rotation_mode="anchor")
+
 
     # Loop over data dimensions and create text annotations.
     fmt = '.2f' if normalize else 'd'
@@ -53,7 +54,7 @@ def plot_confusion_matrix(y_true, y_pred, classes,
             ax.text(j, i, format(cm[i, j], fmt),
                     ha="center", va="center",
                     color="white" if cm[i, j] > thresh else "black")
-    fig.tight_layout()
+            fig.tight_layout()
     return ax
 
 
