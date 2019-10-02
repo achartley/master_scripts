@@ -284,14 +284,16 @@ def relative_distance(positions):
 
     # Standard euclidian distance between points 
     # np.sqrt((x0-x1)**2 + (y0-y1)**2)
+    # We also multiply by 3 to scale the distance from pixels to mm
     relative_dist[double_indices] = np.sqrt(np.sum(
-            (positions[double_indices, 0:2] - positions[double_indices, 2:])**2,
+            (positions[double_indices, 0:2] - positions[double_indices, 2:])**2 * 3,
             axis=1)).reshape(len(double_indices), 1)
 
     return relative_dist
 
+
 def relative_energy(energies):
-    """ Calculates the relative energy between event 1 and event 2 for all
+    """ Calculates the relative energy E1/E2 between event 1 and event 2 for all
     samples in a dataset which have two events.
 
     param energies: Energies of events in the dataset, (E0, E1). For single
@@ -311,8 +313,37 @@ def relative_energy(energies):
     relative_energies = np.zeros((energies.shape[0], 1))
     relative_energies[single_indices] = -100
 
-    relative_energies[double_indices] = np.abs(
-            energies[double_indices, 0] - energies[double_indices, 1]).reshape(len(double_indices), 1)
+    relative_energies[double_indices] = np.reshape(
+            np.amin(energies[double_indices], axis=1) / np.amax(energies[double_indices], axis=1), 
+            (len(double_indices), 1)
+            )
     
     return relative_energies
+
+
+def energy_difference(energies):
+    """ Calculates the energy difference between event 1 and event 2 for all
+    samples in a dataset which have two events.
+
+    param energies: Energies of events in the dataset, (E0, E1). For single
+                    events the energy of 'event 2' is set to 0 in the dataset.
+
+    return: 1D array of relative energies. single events have relative energy
+            set to -100.
+    """
+    
+    # Single events have the E2 energy to 0. We don't want to
+    # do anything about those and simply set the relative energy to -100.
+    # (There is a chance a double event has same energy and thus gives 
+    # relative energy = 0, thus -100 is a safer choice of single event default)
+    double_indices = np.where(energies[:, 1] != 0)[0]
+    single_indices = np.where(energies[:, 1] == 0)[0]
+   
+    energy_differences = np.zeros((energies.shape[0], 1))
+    energy_differences[single_indices] = -100
+
+    energy_differences[double_indices] = np.abs(
+            energies[double_indices, 0] - energies[double_indices, 1]).reshape(len(double_indices), 1)
+    
+    return energy_differences
 
