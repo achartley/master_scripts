@@ -7,10 +7,7 @@ def import_data(path=None, filename=None, num_samples=None, scaling=True, folder
     Used together with analysis repository which has a strict folder
     structure.
 
-    param folder:   Which data to load. Defaults to 'sample'.
-        'real'      ->  real data from scintillator experiment
-        'sample'    ->  sample data (simulated)
-        'simulated' ->  simulated data from scintillator
+    param path: Allows for custom datapath if so desired.
 
     param filename: Which file to load. If not provided, attempts to load
                     all files in folder
@@ -23,7 +20,11 @@ def import_data(path=None, filename=None, num_samples=None, scaling=True, folder
     param scaling:  Whether or not to scale the image data to 0-1 interval.
                     Defaults to True.
     
-    param path: Allows for custom datapath if so desired.
+    param folder:   Which data to load. Defaults to 'sample'.
+        'real'      ->  real data from scintillator experiment
+        'sample'    ->  sample data (simulated)
+        'simulated' ->  simulated data from scintillator
+
 
     returns:    dictionary of data where each filenames are keys and each
                 key,value pair contains dictionary of the data in the file,
@@ -34,16 +35,18 @@ def import_data(path=None, filename=None, num_samples=None, scaling=True, folder
     if path:
         DATA_PATH = path
     else:
-        if folder == 'real':
-            DATA_PATH = '../../data/real/'
-        elif folder == 'sample':
-            DATA_PATH = '../../data/sample/'
-        elif folder == 'simulated':
-            DATA_PATH = '../../data/simulated/'
-        else:
-            print("Invalid data folder specified.") 
-            print("Must be 'real', 'sample', or 'simulated'")
-            exit(1)
+        DATA_PATH = '../../data/'
+
+    if folder == 'real':
+        DATA_PATH = '../../data/real/'
+    elif folder == 'sample':
+        DATA_PATH = '../../data/sample/'
+    elif folder == 'simulated':
+        DATA_PATH = '../../data/simulated/'
+    else:
+        print("Invalid data subfolder specified.") 
+        print("Must be 'real', 'sample', or 'simulated'")
+        exit(1)
 
     # Get individual file paths and filenames from data folder
     # Load each datafile into a dictionary, using the filenames as keys
@@ -229,21 +232,30 @@ def normalize_image_data(images):
     images = (images - np.mean(images)) / (x_max - x_min)
     return images
 
-def save_feature_representation(features, filename):
+def save_feature_representation(path=None, filename, features):
     """ Takes a set of data represented as features (after being) fed
     though a trained network, and saves it as a numpy object.
 
+    param path: directory to save features in.
+    param filename: filename to save the features to.
     param feature: The features to be saved.
     """
-
-    OUTPUT_PATH = '../../data/output/'
+    if path:
+        OUTPUT_PATH = path
+    else:
+        OUTPUT_PATH = '../../data/output/'
     np.save(OUTPUT_PATH+filename, features)
 
-def load_feature_representation(filename):
+def load_feature_representation(path=None, filename):
     """ Given a filename, load a numpy file object from the output folder
     matching the filename.
+    param path: directory to load features from.
+    param filename: filename of features to be loaded.
     """
-    OUTPUT_PATH = '../../data/output/'
+    if path:
+        OUTPUT_PATH = path
+    else:
+        OUTPUT_PATH = '../../data/output/'
     return np.load(OUTPUT_PATH+filename)
 
 def save_model(filename):
