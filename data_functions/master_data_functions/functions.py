@@ -2,7 +2,7 @@ import os
 import numpy as np
 
 
-def import_data(folder='sample', filename=None, num_samples=None, scaling=True):
+def import_data(path=None, filename=None, num_samples=None, scaling=True, folder='sample'):
     """ Imports scintillator data as numpy arrays.
     Used together with analysis repository which has a strict folder
     structure.
@@ -22,6 +22,8 @@ def import_data(folder='sample', filename=None, num_samples=None, scaling=True):
 
     param scaling:  Whether or not to scale the image data to 0-1 interval.
                     Defaults to True.
+    
+    param path: Allows for custom datapath if so desired.
 
     returns:    dictionary of data where each filenames are keys and each
                 key,value pair contains dictionary of the data in the file,
@@ -29,16 +31,19 @@ def import_data(folder='sample', filename=None, num_samples=None, scaling=True):
     """
 
     # Verify input and set DATA_PATH
-    if folder == 'real':
-        DATA_PATH = '../../data/real/'
-    elif folder == 'sample':
-        DATA_PATH = '../../data/sample/'
-    elif folder == 'simulated':
-        DATA_PATH = '../../data/simulated/'
+    if path:
+        DATA_PATH = path
     else:
-        print("Invalid data folder specified.") 
-        print("Must be 'real', 'sample', or 'simulated'")
-        exit(1)
+        if folder == 'real':
+            DATA_PATH = '../../data/real/'
+        elif folder == 'sample':
+            DATA_PATH = '../../data/sample/'
+        elif folder == 'simulated':
+            DATA_PATH = '../../data/simulated/'
+        else:
+            print("Invalid data folder specified.") 
+            print("Must be 'real', 'sample', or 'simulated'")
+            exit(1)
 
     # Get individual file paths and filenames from data folder
     # Load each datafile into a dictionary, using the filenames as keys
@@ -96,7 +101,7 @@ def import_data(folder='sample', filename=None, num_samples=None, scaling=True):
                 labels.append(label)
 
         # Convert lists to numpy arrays and reshape them to remove the added axis from
-        # conversion. TODO: Find a better way to do this.
+        # conversion. TODO: Find a better way to do this?
         images = np.array(images)
         energies = np.array(energies)
         positions = np.array(positions)
