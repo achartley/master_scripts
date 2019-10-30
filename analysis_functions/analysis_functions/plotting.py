@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
+from sklearn.metrics import roc_curve
 
 # This plotting function is fetched from the scikit-learn's example
 # https://scikit-learn.org/stable/auto_examples/model_selection/plot_confusion_matrix.html
@@ -55,6 +56,22 @@ def plot_confusion_matrix(y_true, y_pred, classes,
                     ha="center", va="center",
                     color="white" if cm[i, j] > thresh else "black")
             fig.tight_layout()
-    return ax
+    return fig, ax
 
+def plot_roc_curve(y_true, y_pred):
+    fpr, tpr, thresholds = roc_curve(y_true, y_pred)
+    
+    # Get the index of the threshold closest to 0.5
+    idx = np.abs(thresholds - 0.5).argmin()
 
+    # Plot the curve, with annotation for threshold ~0.5
+    fig, ax = plt.subplots()
+    ax.plot([0, 1], [0, 1], 'k--')
+    ax.plot(fpr, tpr)
+    ax.annotate("threshold = 0.5", (fpr[idx], tpr[idx]),(0.2,0.6),
+		arrowprops=dict(facecolor='black', shrink=0.05))
+    ax.set_xlabel('False positive rate')
+    ax.set_ylabel('True positive rate')
+    ax.set_title('ROC curve')
+
+    return fig, ax
