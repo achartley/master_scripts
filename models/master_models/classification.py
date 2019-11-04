@@ -6,7 +6,7 @@ from tensorflow.keras import Input
 from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.layers import Dense, Flatten, Conv2D, MaxPooling2D, Dropout
 
-def labollita_model(compiled=True):
+def project_model(compiled=True):
     """ Setup an instance of the model made by Harrison Labollita in a previous
         experiment with scintillator data.
 
