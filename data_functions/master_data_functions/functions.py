@@ -243,7 +243,7 @@ def save_feature_representation(filename, features, path=None):
     if path:
         OUTPUT_PATH = path
     else:
-        OUTPUT_PATH = '../../data/output/'
+        OUTPUT_PATH = '../../data/simulated/'
     np.save(OUTPUT_PATH+filename, features)
 
 def load_feature_representation(filename, path=None):
@@ -255,7 +255,7 @@ def load_feature_representation(filename, path=None):
     if path:
         OUTPUT_PATH = path
     else:
-        OUTPUT_PATH = '../../data/output/'
+        OUTPUT_PATH = '../../data/simulated/'
     return np.load(OUTPUT_PATH+filename)
 
 def save_model(filename):
