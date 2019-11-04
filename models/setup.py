@@ -7,6 +7,6 @@ setup(
     author_email='g.t.ulvik@fys.uio.no',
     description='Scripts and functions for keras models used in these project working on scintillator data.',
     install_requires=[
-        "tensorflow-gpu == 2.0.0-beta1",
+        "tensorflow-gpu",
     ],
 )
