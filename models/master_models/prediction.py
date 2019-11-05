@@ -42,7 +42,7 @@ def position_dense(input_shape=(256, 1)):
     # Add layers
     model.add(Dense(512), input_shape=input_shape)
     model.add(Activation('relu'))
-    model.add(Dense(512), input_shape=input_shape)
+    model.add(Dense(512))
     model.add(Activation('relu'))
     model.add(Dropout(0.25))
     model.add(Dense(512))
