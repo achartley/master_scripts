@@ -33,14 +33,14 @@ def position_cnn(input_shape=(16,16,1)):
 
     return model
 
-def position_dense(input_shape=(256, 1)):
+def position_dense():
     """ Set up a sequential model for prediction of positions
     using a fully-connected network.
     """
     model = Sequential()
 
     # Add layers
-    model.add(Dense(512), input_shape=input_shape)
+    model.add(Dense(256))
     model.add(Activation('relu'))
     model.add(Dense(512))
     model.add(Activation('relu'))
