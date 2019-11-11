@@ -2,7 +2,7 @@ import os
 import numpy as np
 
 
-def import_data(path=None, filename=None, num_samples=None, scaling=True, folder='sample'):
+def import_data(path=None, filename=None, num_samples=None, scaling=True, folder=None):
     """ Imports scintillator data as numpy arrays.
     Used together with analysis repository which has a strict folder
     structure.
@@ -43,10 +43,6 @@ def import_data(path=None, filename=None, num_samples=None, scaling=True, folder
         DATA_PATH = '../../data/sample/'
     elif folder == 'simulated':
         DATA_PATH = '../../data/simulated/'
-    else:
-        print("Invalid data subfolder specified.") 
-        print("Must be 'real', 'sample', or 'simulated'")
-        exit(1)
 
     # Get individual file paths and filenames from data folder
     # Load each datafile into a dictionary, using the filenames as keys
