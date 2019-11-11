@@ -40,7 +40,7 @@ def import_data(path=None, num_samples=None, scaling=True):
     with open(path, "r") as infile:
         for line in infile:
             line = np.fromstring(line, sep=' ')
-            image, energy, position = separate_simulated_data(line, scaling)
+            image, energy, position = separate_simulated_data(line)
             label = label_simulated_data(line)
 
             images.append(image)
