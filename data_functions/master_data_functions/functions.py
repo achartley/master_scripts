@@ -169,7 +169,7 @@ def normalize_image_data(images):
     """
     img_term = np.amax(images) - np.amin(images)
     img_mean = np.mean(images)
-    images = (images - img_mean) / bottom
+    images = (images - img_mean) / img_term
     return images
 
 def save_feature_representation(filename, features, path=None):
