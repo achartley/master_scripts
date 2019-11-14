@@ -29,6 +29,31 @@ def position_cnn(input_shape=(16,16,1)):
 
     return model
 
+def position_energy_cnn(input_shape=(16,16,1)):
+    """ Set up a sequential model for prediction of positions.
+    """
+    model = Sequential()
+
+    # Add layers
+    model.add(Conv2D(32, (3, 3), padding='same',
+                     input_shape=input_shape, activation='relu'))
+    model.add(Conv2D(32, (3, 3), activation='relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.25))
+
+    model.add(Conv2D(64, (3, 3), padding='same', activation='relu'))
+    model.add(Conv2D(64, (3, 3), activation='relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.25))
+    
+    model.add(Flatten())
+    model.add(Dense(512, activation='relu'))
+    model.add(Dropout(0.5))
+    model.add(Dense(512, activation='relu'))
+    model.add(Dense(6))
+    model.add(Activation('linear'))
+
+    return model
 def position_dense():
     """ Set up a sequential model for prediction of positions
     using a fully-connected network.
