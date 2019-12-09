@@ -64,7 +64,7 @@ def position_dense():
 
     return model
 
-def position_project():
+def position_classification_cnn():
     """ The same model as used for classification, but without
     the top dense layers.
     """
