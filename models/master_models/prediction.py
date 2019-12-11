@@ -3,7 +3,23 @@ import tensorflow as tf
 from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.layers import Dense, Flatten, Dropout, Activation, Conv2D, MaxPooling2D
 
-def position_cnn(input_shape=(16,16,1)):
+def position_single_cnn(input_shape=(16,16,1)):
+    """ Set up a sequential model for prediction of positions.
+    """
+    model = Sequential()
+
+    # Add layers
+    model.add(Conv2D(32, (3, 3), padding='same',
+                     input_shape=input_shape, activation='relu'))
+    
+    model.add(Flatten())
+    model.add(Dense(512, activation='relu'))
+    model.add(Dense(2))
+    model.add(Activation('linear'))
+
+    return model
+
+def position_double_cnn(input_shape=(16,16,1)):
     """ Set up a sequential model for prediction of positions.
     """
     model = Sequential()
@@ -15,6 +31,38 @@ def position_cnn(input_shape=(16,16,1)):
     model.add(Flatten())
     model.add(Dense(512, activation='relu'))
     model.add(Dense(4))
+    model.add(Activation('linear'))
+
+    return model
+
+def energy_single_cnn(input_shape=(16,16,1)):
+    """ Set up a sequential model for prediction of positions.
+    """
+    model = Sequential()
+
+    # Add layers
+    model.add(Conv2D(32, (3, 3), padding='same',
+                     input_shape=input_shape, activation='relu'))
+    
+    model.add(Flatten())
+    model.add(Dense(512, activation='relu'))
+    model.add(Dense(1))
+    model.add(Activation('linear'))
+
+    return model
+
+def energy_double_cnn(input_shape=(16,16,1)):
+    """ Set up a sequential model for prediction of positions.
+    """
+    model = Sequential()
+
+    # Add layers
+    model.add(Conv2D(32, (3, 3), padding='same',
+                     input_shape=input_shape, activation='relu'))
+    
+    model.add(Flatten())
+    model.add(Dense(512, activation='relu'))
+    model.add(Dense(2))
     model.add(Activation('linear'))
 
     return model
