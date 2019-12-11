@@ -172,6 +172,16 @@ def normalize_image_data(images):
     images = (images - img_mean) / img_term
     return images
 
+def normalize_position_data(positions):
+    """ Takes an imported set of positions and normalizes values to between
+    0 and 1 simply dividing by 16.
+    """
+    single_indices, double_indices, close_indices = event_indices(positions)
+    positions[single_indices, 2:] = -1.0
+    positions[single_indices, :2] /= 16
+    positions[double_indices] /= 16
+    return positions
+
 def save_feature_representation(filename, features, path=None):
     """ Takes a set of data represented as features (after being) fed
     though a trained network, and saves it as a numpy object.
