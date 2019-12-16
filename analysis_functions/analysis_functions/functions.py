@@ -20,3 +20,11 @@ def calc_kfold_accuracies(acc_list):
     acc_mean = np.mean(best)
 
     return [acc_min, acc_max, acc_mean]
+
+def r2_score(y_true, y_pred):
+    """ Given a set of true values and a set of predicted values,
+    calculate the R2 score.
+    """
+    SS_res =  np.sum(np.square(y_true - y_pred))
+    SS_tot = np.sum(np.square(y_true - np.mean(y_true)))
+    return ( 1 - SS_res/(SS_tot + eps) )
