@@ -25,6 +25,7 @@ def r2_score(y_true, y_pred):
     """ Given a set of true values and a set of predicted values,
     calculate the R2 score.
     """
+    eps = 1e-13 # Epsilon avoid possible division by zero
     SS_res =  np.sum(np.square(y_true - y_pred))
     SS_tot = np.sum(np.square(y_true - np.mean(y_true)))
     return ( 1 - SS_res/(SS_tot + eps) )
