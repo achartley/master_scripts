@@ -30,9 +30,8 @@ def position_double_cnn(input_shape=(16,16,1)):
     model.add(Conv2D(32, (3, 3), activation='relu'))
     
     model.add(Flatten())
-    #model.add(Dense(512, activation='relu'))
-    model.add(Dense(4))
-    model.add(Activation('linear'))
+    model.add(Dense(512, activation='relu'))
+    model.add(Dense(4, activation='linear'))
 
     return model
 
