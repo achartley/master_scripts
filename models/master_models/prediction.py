@@ -29,7 +29,7 @@ def position_double_cnn(input_shape=(16,16,1)):
                      input_shape=input_shape, activation='relu'))
     
     model.add(Flatten())
-    model.add(Dense(512, activation='relu'))
+    #model.add(Dense(512, activation='relu'))
     model.add(Dense(4))
     model.add(Activation('linear'))
 
