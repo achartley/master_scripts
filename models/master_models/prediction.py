@@ -27,6 +27,7 @@ def position_double_cnn(input_shape=(16,16,1)):
     # Add layers
     model.add(Conv2D(32, (3, 3), padding='same',
                      input_shape=input_shape, activation='relu'))
+    model.add(Conv2D(32, (3, 3), activation='relu'))
     
     model.add(Flatten())
     #model.add(Dense(512, activation='relu'))
