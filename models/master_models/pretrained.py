@@ -84,5 +84,70 @@ def pretrained_model(which_model="VGG16", input_dim=(16, 16, 3), output_depth=No
 
     return model
 
+def pretrained_vgg16(input_dim=(16, 16, 3)):
+    """ Setup an instance of resnet50 pretrained on imagenet
+
+        param input_dim:    dimensions of input, (16,16,3) is default for scintillator
+    """
+
+    # import correct module
+    base_name = "tensorflow.keras.applications"
+    module_name = base_name + "vgg16"
+    module = import_module(module_name)
+
+    # Load the actual function which lets us create a new instance of a model
+    pretrained = getattr(module, which_model)(include_top=True, weights='imagenet')
+
+    # Create new input layer
+    input_layer = Input(shape=input_dim)
+
+    # Add input layer and all pretrained layers except final softmax layer
+    model = Sequential()
+    model.add(input_layer)
+    for i in range(1, len(pretrained.layers)-1):
+        try:
+            model.add(pretrained.layers[i])
+        except IndexError:
+            # Break if output_depth provided is deeper than model.
+            break
+        except ValueError:
+            # Break if sequential model doesn't support the layer.
+            break
+
+    return model
+
+def pretrained_resnet50(input_dim=(16, 16, 3)):
+    """ Setup an instance of resnet50 pretrained on imagenet
+
+        param input_dim:    dimensions of input, (16,16,3) is default for scintillator
+    """
+
+    # import correct module
+    base_name = "tensorflow.keras.applications"
+    module_name = base_name + "resnet50"
+    module = import_module(module_name)
+
+    # Load the actual function which lets us create a new instance of a model
+    pretrained = getattr(module, which_model)(include_top=True, weights='imagenet')
+
+    # Create new input layer
+    input_layer = Input(shape=input_dim)
+
+    # Add input layer and all pretrained layers except final softmax layer
+    model = Sequential()
+    model.add(input_layer)
+    for i in range(1, len(pretrained.layers)-1):
+        try:
+            model.add(pretrained.layers[i])
+        except IndexError:
+            # Break if output_depth provided is deeper than model.
+            break
+        except ValueError:
+            # Break if sequential model doesn't support the layer.
+            break
+
+    return model
+
+
 if __name__ == "__main__":
     pretrained_model("DenseNet121")
