@@ -2,7 +2,7 @@ import numpy as np
 from importlib import import_module
 import tensorflow as tf
 import tensorflow.keras.applications as tfapps
-from tensorflow.keras import Input
+from tensorflow.keras import InputLayer
 from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.layers import Dense, Flatten
 
@@ -53,7 +53,7 @@ def pretrained_model(which_model="VGG16", input_dim=(16, 16, 3), output_depth=No
     pretrained = getattr(module, which_model)(include_top=False, weights='imagenet')
 
     # Create new input layer
-    input_layer = Input(shape=input_dim)
+    input_layer = InputLayer(shape=input_dim)
 
     # Add input layer and desired amount of pretrained layers to new model
     model = Sequential()
@@ -98,7 +98,7 @@ def pretrained_vgg16(input_dim=(16, 16, 3)):
     pretrained = getattr(module, "VGG16")(include_top=True, weights='imagenet')
 
     # Create new input layer
-    input_layer = Input(shape=input_dim)
+    input_layer = InputLayer(shape=input_dim)
 
     # Add input layer and all pretrained layers except final softmax layer
     model = Sequential()
@@ -129,7 +129,7 @@ def pretrained_resnet50(input_dim=(16, 16, 3)):
     pretrained = getattr(module, "ResNet50")(include_top=True, weights='imagenet')
 
     # Create new input layer
-    input_layer = Input(shape=input_dim)
+    input_layer = InputLayer(shape=input_dim)
 
     # Add input layer and all pretrained layers except final softmax layer
     model = Sequential()
