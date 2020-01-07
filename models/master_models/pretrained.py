@@ -85,7 +85,7 @@ def pretrained_model(which_model="VGG16", input_dim=(16, 16, 3), output_depth=No
     return model
 
 def pretrained_vgg16(input_dim=(16, 16, 3)):
-    """ Setup an instance of resnet50 pretrained on imagenet
+    """ Setup an instance of vgg16 pretrained on imagenet
 
         param input_dim:    dimensions of input, (16,16,3) is default for scintillator
     """
