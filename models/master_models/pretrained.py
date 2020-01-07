@@ -92,7 +92,7 @@ def pretrained_vgg16(input_dim=(16, 16, 3)):
 
     # import correct module
     base_name = "tensorflow.keras.applications"
-    module_name = base_name + "vgg16"
+    module_name = base_name + "." + "vgg16"
     module = import_module(module_name)
 
     # Load the actual function which lets us create a new instance of a model
