@@ -95,15 +95,15 @@ def pretrained_vgg16(input_dim=(16, 16, 3)):
     module = import_module(module_name)
 
     # Load the actual function which lets us create a new instance of a model
-    pretrained = getattr(module, "VGG16")(include_top=True, weights='imagenet')
+    input_layer = Input(shape=input_dim)
+    pretrained = getattr(module, "VGG16")(include_top=True, weights='imagenet', input_tensor=input_layer)
 
     # Create new input layer
-    input_layer = Input(shape=input_dim)
 
     # Add input layer and all pretrained layers except final softmax layer
     model = Sequential()
-    model.add(input_layer)
-    for i in range(1, len(pretrained.layers)-1):
+    #model.add(input_layer)
+    for i in range(0, len(pretrained.layers)-1):
         try:
             model.add(pretrained.layers[i])
         except IndexError:
