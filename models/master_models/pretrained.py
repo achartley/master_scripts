@@ -95,14 +95,14 @@ def pretrained_vgg16(input_dim=(16, 16, 3)):
     module = import_module(module_name)
 
     # Load the actual function which lets us create a new instance of a model
-    input_layer = Input(shape=input_dim)
-    pretrained = getattr(module, "VGG16")(include_top=True, weights='imagenet', input_tensor=input_layer)
+    pretrained = getattr(module, "VGG16")(include_top=True, weights='imagenet')
 
     # Create new input layer
+    input_layer = Input(shape=input_dim)
 
     # Add input layer and all pretrained layers except final softmax layer
     model = Sequential()
-    #model.add(input_layer)
+    model.add(input_layer)
     for i in range(0, len(pretrained.layers)-1):
         try:
             model.add(pretrained.layers[i])
@@ -125,16 +125,16 @@ def pretrained_resnet50(input_dim=(16, 16, 3)):
     module_name = "tensorflow.keras.applications.resnet50"
     module = import_module(module_name)
 
+
+    # Load the actual function which lets us create a new instance of a model
+    pretrained = getattr(module, "ResNet50")(include_top=True, weights='imagenet')
+
     # Create new input layer
     input_layer = Input(shape=input_dim)
 
-    # Load the actual function which lets us create a new instance of a model
-    pretrained = getattr(module, "ResNet50")(include_top=True, weights='imagenet', input_tensor=input_layer)
-
-
     # Add input layer and all pretrained layers except final softmax layer
     model = Sequential()
-    #model.add(input_layer)
+    model.add(input_layer)
     for i in range(0, len(pretrained.layers)-1):
         try:
             model.add(pretrained.layers[i])
