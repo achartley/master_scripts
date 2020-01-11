@@ -2,9 +2,9 @@ import numpy as np
 from importlib import import_module
 import tensorflow as tf
 import tensorflow.keras.applications as tfapps
-from keras import Input
-from keras.models import Model, Sequential
-from keras.layers import Dense, Flatten
+from tensorflow.keras import Input
+from tensorflow.keras.models import Model, Sequential
+from tensorflow.keras.layers import Dense, Flatten
 
 def pretrained_model(which_model="VGG16", input_dim=(16, 16, 3), output_depth=None):
     """ Setup an instance of any model available in tensorflow.keras with 
