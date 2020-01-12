@@ -77,6 +77,7 @@ def pretrained_model(which_model="VGG16", input_dim=(16, 16, 3), output_depth=No
                 break
             except ValueError:
                 # Break if sequential model doesn't support the layer.
+                print("ValueError met, breaking the layer addition loop")
                 break
 
     # Flatten layer to prep for inputting to dense
@@ -102,15 +103,16 @@ def pretrained_vgg16(input_dim=(16, 16, 3)):
 
     # Add input layer and all pretrained layers except final softmax layer
     model = Sequential()
-    model.add(input_layer)
+    #model.add(input_layer)
     for i in range(0, len(pretrained.layers)-1):
         try:
             model.add(pretrained.layers[i])
         except IndexError:
             # Break if output_depth provided is deeper than model.
             break
-        except ValueError:
+        except ValueError as err:
             # Break if sequential model doesn't support the layer.
+            print("ValueError:", err)
             break
 
     return model
@@ -134,15 +136,16 @@ def pretrained_resnet50(input_dim=(16, 16, 3)):
 
     # Add input layer and all pretrained layers except final softmax layer
     model = Sequential()
-    model.add(input_layer)
+    #model.add(input_layer)
     for i in range(0, len(pretrained.layers)-1):
         try:
             model.add(pretrained.layers[i])
         except IndexError:
             # Break if output_depth provided is deeper than model.
             break
-        except ValueError:
+        except ValueError as err:
             # Break if sequential model doesn't support the layer.
+            print("ValueError:", err)
             break
 
     return model
