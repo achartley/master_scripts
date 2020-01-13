@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import tensorflow as tf
 
 
 def import_data(path=None, num_samples=None, scaling=False):
@@ -167,7 +168,7 @@ def normalize_image_data(images):
     """ Takes an imported set of images and normalizes values to between
     0 and 1 using min-max scaling across the whole image set.
     """
-    if len(np.shape(images)) == 4:
+    if tf.istensor(images):
         img_term = np.amax(images[:,1:3]) - np.amin(images[:,1:3])
         img_mean = np.mean(images[:,1:3])
         images[:,1:3] = (images[:,1:3] - img_mean) / img_term
