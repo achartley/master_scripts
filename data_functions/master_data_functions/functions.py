@@ -169,9 +169,10 @@ def normalize_image_data(images):
     0 and 1 using min-max scaling across the whole image set.
     """
     if tf.istensor(images):
-        img_term = np.amax(images[:,1:3]) - np.amin(images[:,1:3])
-        img_mean = np.mean(images[:,1:3])
-        images[:,1:3] = (images[:,1:3] - img_mean) / img_term
+        #img_term = np.amax(images[:,1:3]) - np.amin(images[:,1:3])
+        #img_mean = np.mean(images[:,1:3])
+        #images[:,1:3] = (images[:,1:3] - img_mean) / img_term
+        images = tf.transform.scale_to_0_1(images)
     else:
         img_term = np.amax(images) - np.amin(images)
         img_mean = np.mean(images)
