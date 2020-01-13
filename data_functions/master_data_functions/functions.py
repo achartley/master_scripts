@@ -167,7 +167,7 @@ def normalize_image_data(images):
     """ Takes an imported set of images and normalizes values to between
     0 and 1 using min-max scaling across the whole image set.
     """
-    if len(image.shape) == 4:
+    if len(images.shape) == 4:
         img_term = np.amax(images[:,1:3]) - np.amin(images[:,1:3])
         img_mean = np.mean(images[:,1:3])
         images[:,1:3] = (images[:,1:3] - img_mean) / img_term
