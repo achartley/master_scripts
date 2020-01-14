@@ -168,7 +168,7 @@ def normalize_image_data(images):
     """ Takes an imported set of images and normalizes values to between
     0 and 1 using min-max scaling across the whole image set.
     """
-    if tf.istensor(images):
+    if tf.is_tensor(images):
         #img_term = np.amax(images[:,1:3]) - np.amin(images[:,1:3])
         #img_mean = np.mean(images[:,1:3])
         #images[:,1:3] = (images[:,1:3] - img_mean) / img_term
