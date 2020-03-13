@@ -6,7 +6,4 @@ setup(
     author='Geir Tore Ulvik',
     author_email='g.t.ulvik@fys.uio.no',
     description='Scripts and functions for keras models used in these project working on scintillator data.',
-    install_requires=[
-        "tensorflow-gpu",
-    ],
 )
