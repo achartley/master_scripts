@@ -260,7 +260,7 @@ def relative_distance(positions):
     return relative_dist
 
 
-def relative_energy(energies):
+def relative_energy(energies, noscale=False):
     """ Calculates the relative energy E1/E2 between event 1 and event 2 for all
     samples in a dataset which have two events.
 
@@ -280,11 +280,19 @@ def relative_energy(energies):
    
     relative_energies = np.zeros((energies.shape[0], 1))
     relative_energies[single_indices] = -100
-
-    relative_energies[double_indices] = np.reshape(
-            np.amin(energies[double_indices], axis=1) / np.amax(energies[double_indices], axis=1), 
-            (len(double_indices), 1)
-            )
+    
+    # Divide E1/E2 for all events.
+    if noscale:
+        relative_energies[double_indices] = np.reshape(
+                energies[double_indices, 0] / energies[double_indices, 1], 
+                (len(double_indices), 1)
+                )
+    else:
+        # Divide amin(E1,E2) / amin(E1, E2)
+        relative_energies[double_indices] = np.reshape(
+                np.amin(energies[double_indices], axis=1) / np.amax(energies[double_indices], axis=1), 
+                (len(double_indices), 1)
+                )
     
     return relative_energies
 
