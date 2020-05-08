@@ -16,7 +16,7 @@ def import_data(path=None, num_samples=None, scaling=False):
                         balanced selection of data from the full dataset.
 
     param scaling:  Whether or not to scale the image data to 0-1 interval.
-                    Defaults to True.
+                    Defaults to False.
     
 
     returns:    dictionary of data where each filenames are keys and each
@@ -104,6 +104,46 @@ def import_data(path=None, num_samples=None, scaling=False):
     
     return separated_data
 
+def import_real_data(config, num_samples=None):
+    """ Imports experimental data as numpy arrays.
+    Used together with analysis repository which has a strict folder
+    structure.
+
+    param path: config containing paths, modelnames etc.
+
+    param num_samples:  How many samples to include. With large files,  
+                        memory might become an issue when loading full file.
+                        If specified, the returned data will be the first
+                        n samples
+
+
+    returns: dictionary of: { event_id: {event_descriptor: 1,2,3,4, or 5,
+                                         image: array
+                                        }
+    """
+
+    # Dictionary for storing events
+    events = {}
+
+    # read line by line to alleviate memory strain when files are large
+    with open(config["DATA_PATH"], "r") as infile:
+        for line in infile:
+            # If we have the desired amount of samples, return events.
+            if num_samples and len(event.keys()) == num_samples:
+                return events
+
+            line = np.fromstring(line, sep=' ')
+            event_id = int(line[0])
+            event_descriptor = int(line[1])
+            image = np.array(line[2:], dtype=np.float32).reshape((1,16,16,1))
+            # Reshape to get correct axes
+            #image = np.transpose(image, axes=[1,0,2])
+            events[event_id] = {
+                    "event_descriptor": event_descriptor,
+                    "image": image
+                    }
+    return events
+
 def separate_simulated_data(data):
     """Takes an imported dataset and separates it into images, energies 
     and positions.
@@ -172,6 +212,34 @@ def normalize_image_data(images):
     img_mean = np.mean(images)
     images = (images - img_mean) / img_term
     return images
+
+def normalize_real_data(events):
+    """ Takes the dict containing events and event information and normalizes
+    the images across the full set.
+    """
+    maxval = 0
+    minval = 99999999
+    image_mean = 0
+    for v in events.values():
+        image = v['image']
+        imax = np.amax(image)
+        imin = np.amin(image)
+        if imax > maxval:
+            maxval = imax
+        if imin < minval:
+            minval = imin
+        image_mean += np.mean(image)
+
+    image_term = maxval - minval
+    image_mean = image_mean/len(events.keys())
+    print("maxval:", maxval)
+    print("minval:", minval)
+    print("mean:",image_mean)
+    for v in events.values():
+        v['image'] = (v['image'] - image_mean)/image_term
+
+    return events
+
 
 def normalize_position_data(positions):
     """ Takes an imported set of positions and normalizes values to between
