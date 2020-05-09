@@ -14,6 +14,6 @@ class R2ScoreCallback(tf.keras.callbacks.Callback):
 
     def on_epoch_end(self, epoch, logs=None):
         y_pred = model.predict(model.x)
-        r2 = r2_score(validation_data, y_pred)
+        r2 = r2_score(self.validation_data, y_pred)
         print("R2 score: ", r2)
 

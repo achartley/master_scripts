@@ -3,6 +3,48 @@ import numpy as np
 import tensorflow as tf
 
 
+def get_tf_device(MAX_LOAD):
+    """Determine tensorflow device.
+    Checks for GPU availability given MAX_LOAD and sets DEVICE
+    to use in training or prediction
+    """
+    DEVICE = None
+    # Hacky but works for checking if version is < 2 for ML-servers
+    if int(tf.__version__[0]) < 2:
+        gpu_devices = tf.config.experimental.list_logical_devices('GPU')
+        cpu_devices = tf.config.experimental.list_logical_devices('CPU')
+    else:
+        gpu_devices = tf.config.list_logical_devices('GPU')
+        cpu_devices = tf.config.list_logical_devices('CPU')
+
+
+    if gpu_devices:
+        nvidia_command = [
+                "nvidia-smi",
+                "--query-gpu=index,utilization.gpu",
+                "--format=csv"]
+        nvidia_output = subprocess.run(nvidia_command, text=True, capture_output=True).stdout
+        gpu_loads = np.array(re.findall(r"(\d+), (\d+) %", nvidia_output),
+        dtype=np.int) # tuple (id, load%)
+        eligible_gpu = np.where(gpu_loads[:,1] < MAX_LOAD)
+        if len(eligible_gpu[0]) == 0:
+            print("No GPUs with less than 20% load. Check nvidia-smi.")
+            exit(0)
+        else:
+            # Choose the highest id eligible GPU
+            # Assuming a lot of people use default allocation which is
+            # lowest id.
+            gpu_id = np.amax(gpu_loads[eligible_gpu,0])
+            DEVICE = gpu_devices[gpu_id].name
+            print("CHOSEN GPU IS:", DEVICE)
+    else:
+        # Default to CPU
+        DEVICE = cpu_devices[0].name
+        print("NO GPU FOUND, DEFAULTING TO CPU.")
+
+    return DEVICE
+
+
 def import_data(path=None, num_samples=None, scaling=False):
     """ Imports scintillator data as numpy arrays.
     Used together with analysis repository which has a strict folder
