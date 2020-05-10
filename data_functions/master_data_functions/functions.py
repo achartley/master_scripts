@@ -1,4 +1,5 @@
 import os
+import sys
 import numpy as np
 import tensorflow as tf
 
@@ -81,6 +82,7 @@ def import_data(path=None, num_samples=None, scaling=False):
 
     # read line by line to alleviate memory strain when files are large
     with open(path, "r") as infile:
+        count = 0
         for line in infile:
             line = np.fromstring(line, sep=' ')
             image, energy, position = separate_simulated_data(line)
@@ -90,6 +92,9 @@ def import_data(path=None, num_samples=None, scaling=False):
             energies.append(energy)
             positions.append(position)
             labels.append(label)
+            count += 1
+            print("Lines read: {:10d}".format(count), end="\r")
+            sys.stdout.flush()
 
     # Convert lists to numpy arrays and reshape them to remove the added axis from
     # conversion. TODO: Find a better way to do this?
