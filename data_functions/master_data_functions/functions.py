@@ -2,6 +2,7 @@ import os
 import sys
 import numpy as np
 import tensorflow as tf
+import subprocess
 
 
 def get_tf_device(MAX_LOAD):
