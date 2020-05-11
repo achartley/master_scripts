@@ -189,8 +189,7 @@ def import_real_data(config, num_samples=None):
             line = np.fromstring(line, sep=' ')
             event_id = int(line[0])
             event_descriptor = int(line[1])
-            image = np.array(line[2:], dtype=np.float32).reshape((1,16,16,1))
-            # Reshape to get correct axes
+            image = np.array(line[2:], dtype=np.float32).reshape((16,16))
             #image = np.transpose(image, axes=[1,0,2])
             events[event_id] = {
                     "event_descriptor": event_descriptor,
@@ -275,20 +274,16 @@ def normalize_real_data(events):
     minval = 99999999
     image_mean = 0
     for v in events.values():
-        image = v['image']
-        imax = np.amax(image)
-        imin = np.amin(image)
+        imax = np.amax(v["image"])
+        imin = np.amin(v["image"])
         if imax > maxval:
             maxval = imax
         if imin < minval:
             minval = imin
-        image_mean += np.mean(image)
+        image_mean += np.mean(v["image"])
 
     image_term = maxval - minval
     image_mean = image_mean/len(events.keys())
-    print("maxval:", maxval)
-    print("minval:", minval)
-    print("mean:",image_mean)
     for v in events.values():
         v['image'] = (v['image'] - image_mean)/image_term
 
