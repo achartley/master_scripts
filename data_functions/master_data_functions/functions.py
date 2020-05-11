@@ -10,15 +10,22 @@ def get_tf_device(MAX_LOAD):
     to use in training or prediction
     """
     DEVICE = None
-    # Hacky but works for checking if version is < 2 for ML-servers
+
+    # Set memory growth and list logical devices
     if int(tf.__version__[0]) < 2:
+        physical_gpu = tf.config.experimental.list_physical_devices('GPU')
+        for gpu in physical_gpu:
+            tf.config.experimental.set_memory_growth(gpu, True)
         gpu_devices = tf.config.experimental.list_logical_devices('GPU')
         cpu_devices = tf.config.experimental.list_logical_devices('CPU')
     else:
+        physical_gpu = tf.config.list_physical_devices('GPU')
+        for gpu in physical_gpu:
+            tf.config.experimental.set_memory_growth(gpu, True)
         gpu_devices = tf.config.list_logical_devices('GPU')
         cpu_devices = tf.config.list_logical_devices('CPU')
 
-
+    # Select suitable GPU or default to CPU
     if gpu_devices:
         nvidia_command = [
                 "nvidia-smi",
