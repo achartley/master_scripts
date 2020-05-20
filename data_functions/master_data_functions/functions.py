@@ -102,7 +102,6 @@ def import_data(path=None, num_samples=None, scaling=False):
             positions.append(position)
             labels.append(label)
             count += 1
-            print("Lines read: {:10d}".format(count), end="\r")
             sys.stdout.flush()
 
     # Convert lists to numpy arrays and reshape them to remove the added axis from
@@ -178,11 +177,13 @@ def import_real_data(config, num_samples=None):
                                         }
     """
 
+    filename = config["DATA_PATH"] + config["DATA_FILENAME"]
     # Dictionary for storing events
     events = {}
-
+    images = []
     # read line by line to alleviate memory strain when files are large
-    with open(config["DATA_PATH"], "r") as infile:
+    with open(filename, "r") as infile:
+        image_idx = 0
         for line in infile:
             # If we have the desired amount of samples, return events.
             if num_samples and len(event.keys()) == num_samples:
@@ -191,13 +192,16 @@ def import_real_data(config, num_samples=None):
             line = np.fromstring(line, sep=' ')
             event_id = int(line[0])
             event_descriptor = int(line[1])
-            image = np.array(line[2:], dtype=np.float32).reshape((16,16))
-            #image = np.transpose(image, axes=[1,0,2])
+            image = np.array(line[2:], dtype=np.float32).reshape((16,16,1))
+            images.append(image)
             events[event_id] = {
                     "event_descriptor": event_descriptor,
-                    "image": image
+                    "image_idx": image_idx
                     }
-    return events
+            image_idx += 1
+
+    images = np.array(images)
+    return events, images
 
 def separate_simulated_data(data):
     """Takes an imported dataset and separates it into images, energies 
@@ -222,8 +226,6 @@ def separate_simulated_data(data):
 
     # reshape to image dims (batch, rows, cols, channels)
     images = data[:, :n_pixels].reshape(n_img, 16, 16, 1)
-    # transpose to correct spatial orientation
-    images = np.transpose(images, axes=[0, 2, 1, 3])
     
     # Extract energies and positions as array with columns [Energy1, Energy2]
     # and positions array with columns [Xpos1, Ypos1, Xpos2, Ypos2]
