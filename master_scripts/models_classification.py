@@ -1,4 +1,5 @@
 import numpy as np
+import json
 from importlib import import_module
 import tensorflow as tf
 import tensorflow.keras.applications as tfapps
@@ -34,3 +35,9 @@ def project_model(compiled=True):
                 )
 
     return model
+
+
+if __name__ == "__main__":
+    model = project_model(compiled=False)
+    model_config = model.to_json()
+    print(json.dumps(json.loads(model_config), indent=2))
