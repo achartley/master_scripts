@@ -1,19 +1,16 @@
-# Ignore FutureWarnings
 import warnings
-warnings.filterwarnings('ignore',category=FutureWarning)
-
 import json
 from datetime import datetime
-
-import numpy as np
+warnings.filterwarnings('ignore', category=FutureWarning)
 import tensorflow as tf
 from tensorflow.keras.utils import to_categorical
 from sklearn.model_selection import StratifiedKFold
+from master_scripts.data_functions import get_tf_device
+from master_scripts.models_classification import project_model
 
-from master_scripts.data_functions import *
 
 class Experiment:
-    """ Class that handles a full training run of one model. 
+    """ Class that handles a full training run of one model.
     The class takes a defined, compiled model, runs training and logs
     model parameters and results to file. The model is stored with an id
     matching that of the output configuration.
@@ -22,10 +19,9 @@ class Experiment:
     - before experiment run
         Data is preprocessed
         Model is defined and compiled with desired optimizer and hyperparams
-    - during run
         Data is split into training and validation based on whether it's
         one training run or if it's kfold.
-        The model is trained.
+    - model is trained with given parameters
     - after training
         Model is saved so that it can be loaded and used for prediction or
         classification later.
@@ -37,84 +33,106 @@ class Experiment:
         inspection.
     """
 
-    def __init__(self, model=None, config=None):
+    def __init__(self, experiment_type, experiment_name=None, model=None):
         """ The config should contain the parameters needed for
         model.fit. If no config is given, default values are used.
+
+        param experiment_type: 'classification' or 'prediction'
+        param experiment_name: optional name to include in output title
+        param model: the model that is to be trained and evaluated
         """
+
         self.model = model
-        self.config = config
+        self.history = None
+        self.experiment_type = experiment_type
         # set experiment id, format from datetime today
-        # yyyymmddhhmmss
-        self.experiment_id = datetime.today().strftime('%Y%m%d%H%M%S')
-        self.experiment_name = name
+        # yyyymmddhhmmssffffff where f is microseconds
+        self.experiment_id = datetime.today().strftime('%Y%m%d%H%M%S%f')
+        self.experiment_name = experiment_name
 
         # set gpu/cpu device
         self.gpu_max_load = 20
         self.tf_device = None
-    
 
-    def load_config(self, config_path):
-        """ The config is json-formatted.
-        See ../config/ for example and/or template
-        """
-        with open(config_path, "r") as fp:
-            config = json.load(config_path)
+        # minor default config
+        self.config = {
+            'batch_size': 32,
+            'epochs': 20,
+            'verbose': 2,
+            'callbacks': []
+        }
 
-    def run(x_train, y_train, x_val, y_val, MAX_LOAD=None, TF_DEVICE=None):
+    def run(self, x_train, y_train, x_val, y_val,
+            TF_DEVICE=None,
+            ):
         """ Single training run of the given model. It is assumed that the
-        input data is preprocessed, normalized and good to go.
+        input data is preprocessed, normalized, and good to go.
         """
-        # Determine tensorflow device
+        # Determine tensorflow device if not provided
         if self.tf_device is None:
-            self.tf_device = get_tf_device(self.gpu_max_load)  
+            self.tf_device = get_tf_device(self.gpu_max_load)
 
         # PATH variables
         DATA_PATH = "../../data/simulated/"
         OUTPUT_PATH = "../../data/output/"
         MODEL_PATH = OUTPUT_PATH + "models/"
 
-        with tf.device(DEVICE):
-            # Callbacks
-            cb_save = tf.keras.callbacks.ModelCheckpoint(
-                    filepath=fpath, 
-                    monitor='val_loss', 
-                    save_best_only=True,
-                    mode='min'
-                    )
-            cb_earlystopping = tf.keras.callbacks.EarlyStopping(
-                    monitor='val_loss', 
-                    patience=2,
-                    verbose=1,
-                    restore_best_weights=True,
-                    )
+        with tf.device(self.tf_device):
+            self.history = self.model.fit(
+                x_train,
+                y_train,
+                batch_size=self.config['batch_size'],
+                epochs=self.config['epochs'],
+                validation_data=(x_val, y_val),
+                verbose=self.config['verbose'],
+                callbacks=self.config['callbacks']
+            )
 
-            cb_r2 = R2ScoreCallback(val_data)
-            # Parameters for the model
-            batch_size = 32
-            epochs = 20
-            history = model.fit(
-                    x_train,
-                    y_train,
-                    batch_size=self.config["batch_size"],
-                    epochs=self.config["epochs"],
-                    validation_data=(x_val, y_val),
-                    verbose=self.config["verbose"],
-                    callbacks=[cb_r2, cb_earlystopping, cb_save]
-                    )
-            test_predictions = model.predict(normalize_image_data(images[test_idx]))
-            test_r2 = cb_r2.r2_score(test_predictions, positions[test_idx, :2])
-            print("test_r2:", test_r2)
-        raise NotImplemented
-
-    def run_kfold(x, y, MAX_LOAD=None, TF_DEVICE=None ):
+    def run_kfold(self, x, y, TF_DEVICE=None):
         """ Train the model using kfold cross-validation.
         """
-        raise NotImplemented
+        # Determine tensorflow device if not provided
+        if self.tf_device is None:
+            self.tf_device = get_tf_device(self.gpu_max_load)
 
-    def output_experiment():
+        if 'n_folds' in self.config:
+            n_folds = self.config['n_folds']
+        else:
+            n_folds = 5
+
+        # Params for k-fold cross-validation
+        k_shuffle = True
+
+        # StratifiedKFold doesn't take one-hot
+        y = y.argmax(axis=-1)
+
+        # Store accuracy for each fold for all models
+        k_fold_results = {}
+
+        # Create KFold data generator
+        skf = StratifiedKFold(n_splits=n_folds, shuffle=k_shuffle)
+
+        # Run k-fold cross-validation
+        fold = 0
+        for train_idx, val_idx in skf.split(x, y):
+
+            # Train model
+            history = self.model.fit(
+                x[train_idx],
+                y[train_idx],
+                epochs=self.config['epochs'],
+                batch_size=self.config['batch_size'],
+                validation_data=(x[val_idx], y[val_idx]),
+                callbacks=self.config['callbacks']
+            )
+
+            # Store the accuracy
+            k_fold_results[fold] = history
+
+        raise NotImplementedError
+
+    def output_experiment(self):
         """ Output a structured json file containing all model configuration
         and parameters, as well as model evaulation metrics and results.
         """
-        raise NotImplemented
-
-
+        raise NotImplementedError

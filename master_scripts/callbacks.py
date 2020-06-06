@@ -26,4 +26,3 @@ class R2ScoreCallback(tf.keras.callbacks.Callback):
         r2 = self.r2_score(self.val_y, y_pred)
         print("val_r2: {:.4f}".format(r2))
 
-

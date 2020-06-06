@@ -2,37 +2,61 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import roc_curve
+import seaborn as sns
 
 # This plotting function is fetched from the scikit-learn's example
 # https://scikit-learn.org/stable/auto_examples/model_selection/plot_confusion_matrix.html
-def plot_event(event, event_id):
+
+
+def plot_event(event, event_id, image, ax=None):
     """ Plots a real even with all present info about the event.
     event_id: the id of the event.
     event: the dict associated with the event. Contains at least
-            "event_descriptor" and "image".
+            "event_descriptor" and "event_class"
             After classification and prediction additionally
             contains at least "event_class", "predicted_position",
             "predicted_energy".
-    
+    image: The image associated with the event
+    ax: matplotlib axes object to plot in
+
     returns: ax object for the event.
     """
-    fig, ax = plt.subplots()
-    ax.imshow(event["image"].reshape((16,16)))
+    # Set seaborn default theme
+    sns.set()
+
+    if ax is None:
+        ax = plt.gca()
+
+    sns.heatmap(image.reshape((16, 16)),
+                square=True,
+                ax=ax,
+                xticklabels=1,
+                yticklabels=1,
+                cmap="YlGnBu_r")
+    # ax.imshow(image.reshape((16, 16)), origin='lower')
     ax.set_title(f"Event {event_id}")
     for i, key in enumerate(event.keys()):
-        if key == "image":
+        if key == 'image_idx':
             i -= 1
             continue
-        ax.text(16, i, f"{key}: {event[key]}", fontsize=12)
+        ax.text(0,
+                i * 15 + 0.3,
+                f"{key}: {event[key]}",
+                fontsize=10,
+                color='white'
+                )
         if key == "predicted_position":
             pos = event[key]
             ax.plot(pos[0], pos[1], 'rx')
+
+    # Set some axis properties which seaborn doesn't
+    ax.invert_yaxis()
+    ax.tick_params(axis='y', rotation=0)
     return ax
 
-def plot_confusion_matrix(y_true, y_pred, classes,
-        normalize=False,
-        title=None,
-        cmap=plt.cm.Blues):
+
+def plot_confusion_matrix(y_true, y_pred, classes, normalize=False,
+                          title=None, cmap=plt.cm.Blues):
     """
     This function prints and plots the confusion matrix.
     Normalization can be applied by setting `normalize=True`.
@@ -82,6 +106,7 @@ def plot_confusion_matrix(y_true, y_pred, classes,
             fig.tight_layout()
     return fig, ax
 
+
 def plot_roc_curve(y_true, y_pred):
     fpr, tpr, thresholds = roc_curve(y_true, y_pred)
     
@@ -92,8 +117,8 @@ def plot_roc_curve(y_true, y_pred):
     fig, ax = plt.subplots()
     ax.plot([0, 1], [0, 1], 'k--')
     ax.plot(fpr, tpr)
-    ax.annotate("threshold = 0.5", (fpr[idx], tpr[idx]),(0.2,0.6),
-		arrowprops=dict(facecolor='black', shrink=0.05))
+    ax.annotate("threshold = 0.5", (fpr[idx], tpr[idx]), (0.2, 0.6),
+                arrowprops=dict(facecolor='black', shrink=0.05))
     ax.set_xlabel('False positive rate')
     ax.set_ylabel('True positive rate')
     ax.set_title('ROC curve')
