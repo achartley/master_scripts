@@ -1,9 +1,19 @@
-import os
 import sys
 import re
+import git
 import numpy as np
 import tensorflow as tf
 import subprocess
+
+
+def get_git_root():
+    """ Get the git repo root path to use relative file paths
+    in the rest of the code.
+    """
+
+    rpath = git.Repo('.', search_parent_directories=True).working_tree_dir
+    rpath = rpath + '/'
+    return rpath
 
 
 def get_tf_device(MAX_LOAD):
@@ -30,13 +40,14 @@ def get_tf_device(MAX_LOAD):
     # Select suitable GPU or default to CPU
     if gpu_devices:
         nvidia_command = [
-                "nvidia-smi",
-                "--query-gpu=index,utilization.gpu",
-                "--format=csv"]
-        nvidia_output = subprocess.run(nvidia_command, text=True, capture_output=True).stdout
+            "nvidia-smi",
+            "--query-gpu=index,utilization.gpu",
+            "--format=csv"]
+        nvidia_output = subprocess.run(
+            nvidia_command, text=True, capture_output=True).stdout
         gpu_loads = np.array(re.findall(r"(\d+), (\d+) %", nvidia_output),
-        dtype=np.int) # tuple (id, load%)
-        eligible_gpu = np.where(gpu_loads[:,1] < MAX_LOAD)
+                             dtype=np.int)  # tuple (id, load%)
+        eligible_gpu = np.where(gpu_loads[:, 1] < MAX_LOAD)
         if len(eligible_gpu[0]) == 0:
             print("No GPUs with less than 20% load. Check nvidia-smi.")
             exit(0)
@@ -44,7 +55,7 @@ def get_tf_device(MAX_LOAD):
             # Choose the highest id eligible GPU
             # Assuming a lot of people use default allocation which is
             # lowest id.
-            gpu_id = np.amax(gpu_loads[eligible_gpu,0])
+            gpu_id = np.amax(gpu_loads[eligible_gpu, 0])
             DEVICE = gpu_devices[gpu_id].name
             print("CHOSEN GPU IS:", DEVICE)
     else:
@@ -69,7 +80,7 @@ def import_data(path=None, num_samples=None, scaling=False):
 
     param scaling:  Whether or not to scale the image data to 0-1 interval.
                     Defaults to False.
-    
+
 
     returns:    dictionary of data where each filenames are keys and each
                 key,value pair contains dictionary of the data in the file,
@@ -111,10 +122,10 @@ def import_data(path=None, num_samples=None, scaling=False):
     positions = np.array(positions)
     labels = np.array(labels)
 
-    images = images.reshape(images.shape[0], images.shape[2], images.shape[3], images.shape[4])
+    images = images.reshape(
+        images.shape[0], images.shape[2], images.shape[3], images.shape[4])
     energies = energies.reshape(energies.shape[0], energies.shape[2])
     positions = positions.reshape(positions.shape[0], positions.shape[2])
-
 
     # Pick a num_samples randomly selected samples such that the returned
     # dataset contains a balanced number of single and double events.
@@ -129,10 +140,10 @@ def import_data(path=None, num_samples=None, scaling=False):
 
         # Handle cases where number of samples is not an even number
         if num_samples % 2 != 0:
-            num_double = num_samples//2
+            num_double = num_samples // 2
             num_single = num_double + 1
         else:
-            num_single = num_double = num_samples//2
+            num_single = num_double = num_samples // 2
 
         # Handle cases where dataset contains fewer than num_samples/2 of
         # an event type
@@ -142,22 +153,29 @@ def import_data(path=None, num_samples=None, scaling=False):
             num_double = len(double_indices)
 
         # Draw random indices single and double indices
-        single_out = np.random.choice(single_indices, size=num_single, replace=False)
-        double_out = np.random.choice(double_indices, size=num_double, replace=False)
+        single_out = np.random.choice(
+            single_indices, size=num_single, replace=False)
+        double_out = np.random.choice(
+            double_indices, size=num_double, replace=False)
 
         # Concatenate the selected images, energies, positions and labels.
-        images = np.concatenate((images[single_out], images[double_out]), axis=0)
-        energies = np.concatenate((energies[single_out], energies[double_out]), axis=0)
-        positions = np.concatenate((positions[single_out], positions[double_out]), axis=0)
-        labels = np.concatenate((labels[single_out], labels[double_out]), axis=0)
+        images = np.concatenate(
+            (images[single_out], images[double_out]), axis=0)
+        energies = np.concatenate(
+            (energies[single_out], energies[double_out]), axis=0)
+        positions = np.concatenate(
+            (positions[single_out], positions[double_out]), axis=0)
+        labels = np.concatenate(
+            (labels[single_out], labels[double_out]), axis=0)
 
     # Store the data for return
     separated_data["images"] = images
     separated_data["energies"] = energies
     separated_data["positions"] = positions
     separated_data["labels"] = labels
-    
+
     return separated_data
+
 
 def import_real_data(config, num_samples=None):
     """ Imports experimental data as numpy arrays.
@@ -192,74 +210,79 @@ def import_real_data(config, num_samples=None):
             line = np.fromstring(line, sep=' ')
             event_id = int(line[0])
             event_descriptor = int(line[1])
-            image = np.array(line[2:], dtype=np.float32).reshape((16,16,1))
+            image = np.array(line[2:], dtype=np.float32).reshape((16, 16, 1))
             images.append(image)
             events[event_id] = {
-                    "event_descriptor": event_descriptor,
-                    "image_idx": image_idx
-                    }
+                "event_descriptor": event_descriptor,
+                "image_idx": image_idx
+            }
             image_idx += 1
 
     images = np.array(images)
     return events, images
 
+
 def separate_simulated_data(data):
-    """Takes an imported dataset and separates it into images, energies 
+    """Takes an imported dataset and separates it into images, energies
     and positions.
 
     Data info:
     The first 256 values in each row correspond to the 16x16 detector image and
-    the last 6 values correspond to Energy1, Xpos1, Ypos1, Energy2, Xpos2, Ypos2.
+    the last 6 values correspond to Energy1, Xpos1, Ypos1, Energy2, Xpos2,
+    Ypos2.
 
     param data: array of one or more lines from datafile
-    
-        
+
+
     returns: list, [images, energies, positions]
     """
 
     # If data is just one line, reshape to (1, data.shape)
     if len(data.shape) < 2:
         data = data.reshape((1, len(data)))
-    
-    n_pixels = data.shape[1] - 6 #account for 6 non-pixel values
-    n_img = data.shape[0] # Number of sample images
+
+    n_pixels = data.shape[1] - 6  # account for 6 non-pixel values
+    n_img = data.shape[0]  # Number of sample images
 
     # reshape to image dims (batch, rows, cols, channels)
     images = data[:, :n_pixels].reshape(n_img, 16, 16, 1)
-    
+
     # Extract energies and positions as array with columns [Energy1, Energy2]
     # and positions array with columns [Xpos1, Ypos1, Xpos2, Ypos2]
-    energy1 = data[:, n_pixels].reshape(n_img, 1) # reshape for stacking
-    energy2 = data[:, n_pixels+3].reshape(n_img, 1) # reshape for stacking
+    energy1 = data[:, n_pixels].reshape(n_img, 1)  # reshape for stacking
+    energy2 = data[:, n_pixels + 3].reshape(n_img, 1)  # reshape for stacking
     energies = np.hstack((energy1, energy2))
 
-    position1 = data[:, n_pixels+1:n_pixels+3]
-    position2 = data[:, n_pixels+4:]
+    position1 = data[:, n_pixels + 1:n_pixels + 3]
+    position2 = data[:, n_pixels + 4:]
     positions = np.hstack((position1, position2))
-    
+
     return [images, energies, positions]
 
+
 def label_simulated_data(data):
-    """Given arrays of energies, produces a set of labels for the dataset 
+    """Given arrays of energies, produces a set of labels for the dataset
     for use in classification with
     0 -> single event
-    1 -> double event 
-    The labels are determined from the energy values, as we know that if 
+    1 -> double event
+    The labels are determined from the energy values, as we know that if
     there is no second particle then Energy2 = 0.
     """
-    
+
     # Extract energies as array with columns [Energy1, Energy2]
     if len(data.shape) < 2:
-        data = data.reshape((1,)+data.shape)
+        data = data.reshape((1,) + data.shape)
     n_samples = data.shape[0]
-    n_pixels = 256 # The images are a 16x16 grid, flattened
-    energy1 = data[:, n_pixels].reshape(n_samples, 1) # reshape for stacking
-    energy2 = data[:, n_pixels+3].reshape(n_samples, 1) # reshape for stacking
+    n_pixels = 256  # The images are a 16x16 grid, flattened
+    energy1 = data[:, n_pixels].reshape(n_samples, 1)  # reshape for stacking
+    # reshape for stacking
+    energy2 = data[:, n_pixels + 3].reshape(n_samples, 1)
     energies = np.hstack((energy1, energy2))
 
-    labels = np.where(energies[:,1] != 0, 1, 0)
-            
+    labels = np.where(energies[:, 1] != 0, 1, 0)
+
     return labels
+
 
 def normalize_image_data(images):
     """ Takes an imported set of images and normalizes values to between
@@ -269,6 +292,7 @@ def normalize_image_data(images):
     img_mean = np.mean(images)
     images = (images - img_mean) / img_term
     return images
+
 
 def normalize_real_data(events):
     """ Takes the dict containing events and event information and normalizes
@@ -287,9 +311,9 @@ def normalize_real_data(events):
         image_mean += np.mean(v["image"])
 
     image_term = maxval - minval
-    image_mean = image_mean/len(events.keys())
+    image_mean = image_mean / len(events.keys())
     for v in events.values():
-        v['image'] = (v['image'] - image_mean)/image_term
+        v['image'] = (v['image'] - image_mean) / image_term
 
     return events
 
@@ -304,6 +328,7 @@ def normalize_position_data(positions):
     positions[double_indices] /= 16
     return positions
 
+
 def save_feature_representation(filename, features, path=None):
     """ Takes a set of data represented as features (after being) fed
     though a trained network, and saves it as a numpy object.
@@ -316,7 +341,8 @@ def save_feature_representation(filename, features, path=None):
         OUTPUT_PATH = path
     else:
         OUTPUT_PATH = '../../data/simulated/'
-    np.save(OUTPUT_PATH+filename, features)
+    np.save(OUTPUT_PATH + filename, features)
+
 
 def load_feature_representation(filename, path=None):
     """ Given a filename, load a numpy file object from the output folder
@@ -328,55 +354,52 @@ def load_feature_representation(filename, path=None):
         OUTPUT_PATH = path
     else:
         OUTPUT_PATH = '../../data/simulated/'
-    return np.load(OUTPUT_PATH+filename)
+    return np.load(OUTPUT_PATH + filename)
 
-def save_model(filename):
-    raise NotImplemented
-
-def load_model(filename):
-    raise NotImplemented
 
 def event_indices(positions, threshold=3.0):
-    """ Returns indices of events with a distance lower than a certain 
+    """ Returns indices of events with a distance lower than a certain
     threshold to do further training on.
 
     param positions:    array of positions (x0, y0, x1, y1)
     param threshold:    float, the threshold which determines what is a
                         'close' event.
 
-    returns:    Indices for single events, double events, and for the subset 
+    returns:    Indices for single events, double events, and for the subset
                 of double events which are 'close' events.
     """
     indices_single = np.where(positions[:, 2] < 0)[0]
     indices_double = np.where(positions[:, 2] >= 0)[0]
     dist = relative_distance(positions)
     indices_close = np.nonzero((dist >= 0) == (dist < threshold))[0]
-    
+
     return indices_single, indices_double, indices_close
+
 
 def relative_distance(positions):
     """ Calculates the relative distance between events in a set of events.
-    
+
     param positions: Array of positions for the dataset (x0, y0, x1, y1)
 
     return: 1D array of relative distances between events.
             single events have relative distance set to -100
     """
-   
+
     # Single events have the x1, y1 positions set to -100. We don't want to
     # do anything about those and simply set the relative distance to -100.
     single_indices = np.where(positions[:, 2] < 0)[0]
     double_indices = np.where(positions[:, 2] >= 0)[0]
-   
+
     relative_dist = np.zeros((positions.shape[0], 1))
     relative_dist[single_indices] = -100
 
-    # Standard euclidian distance between points 
+    # Standard euclidian distance between points
     # np.sqrt((x0-x1)**2 + (y0-y1)**2)
     # We also multiply by 3 to scale the distance from pixels to mm
     relative_dist[double_indices] = np.sqrt(np.sum(
-            (positions[double_indices, 0:2] - positions[double_indices, 2:])**2 * 3,
-            axis=1)).reshape(len(double_indices), 1)
+        (positions[double_indices, 0:2]
+         - positions[double_indices, 2:])**2 * 3,
+        axis=1)).reshape(len(double_indices), 1)
 
     return relative_dist
 
@@ -391,30 +414,31 @@ def relative_energy(energies, noscale=False):
     return: 1D array of relative energies. single events have relative energy
             set to -100.
     """
-    
+
     # Single events have the E2 energy to 0. We don't want to
     # do anything about those and simply set the relative energy to -100.
-    # (There is a chance a double event has same energy and thus gives 
+    # (There is a chance a double event has same energy and thus gives
     # relative energy = 0, thus -100 is a safer choice of single event default)
     double_indices = np.where(energies[:, 1] != 0)[0]
     single_indices = np.where(energies[:, 1] == 0)[0]
-   
+
     relative_energies = np.zeros((energies.shape[0], 1))
     relative_energies[single_indices] = -100
-    
+
     # Divide E1/E2 for all events.
     if noscale:
         relative_energies[double_indices] = np.reshape(
-                energies[double_indices, 0] / energies[double_indices, 1], 
-                (len(double_indices), 1)
-                )
+            energies[double_indices, 0] / energies[double_indices, 1],
+            (len(double_indices), 1)
+        )
     else:
         # Divide amin(E1,E2) / amin(E1, E2)
         relative_energies[double_indices] = np.reshape(
-                np.amin(energies[double_indices], axis=1) / np.amax(energies[double_indices], axis=1), 
-                (len(double_indices), 1)
-                )
-    
+            np.amin(energies[double_indices], axis=1)
+            / np.amax(energies[double_indices], axis=1),
+            (len(double_indices), 1)
+        )
+
     return relative_energies
 
 
@@ -428,19 +452,19 @@ def energy_difference(energies):
     return: 1D array of relative energies. single events have relative energy
             set to -100.
     """
-    
+
     # Single events have the E2 energy to 0. We don't want to
     # do anything about those and simply set the relative energy to -100.
-    # (There is a chance a double event has same energy and thus gives 
+    # (There is a chance a double event has same energy and thus gives
     # relative energy = 0, thus -100 is a safer choice of single event default)
     double_indices = np.where(energies[:, 1] != 0)[0]
     single_indices = np.where(energies[:, 1] == 0)[0]
-   
+
     energy_differences = np.zeros((energies.shape[0], 1))
     energy_differences[single_indices] = -100
 
     energy_differences[double_indices] = np.abs(
-            energies[double_indices, 0] - energies[double_indices, 1]).reshape(len(double_indices), 1)
-    
-    return energy_differences
+        energies[double_indices, 0] - energies[double_indices, 1]
+    ).reshape(len(double_indices), 1)
 
+    return energy_differences

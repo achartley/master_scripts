@@ -1,12 +1,12 @@
-import warnings
-import json
 from datetime import datetime
-warnings.filterwarnings('ignore', category=FutureWarning)
-import tensorflow as tf
-from tensorflow.keras.utils import to_categorical
 from sklearn.model_selection import StratifiedKFold
-from master_scripts.data_functions import get_tf_device
-from master_scripts.models_classification import project_model
+from master_scripts.data_functions import get_tf_device, get_git_root
+import tensorflow as tf
+import git
+import json
+import warnings
+# Set warning options to get a bit cleaner output when running
+warnings.filterwarnings('ignore', category=FutureWarning)
 
 
 class Experiment:
@@ -33,7 +33,9 @@ class Experiment:
         inspection.
     """
 
-    def __init__(self, experiment_type, experiment_name=None, model=None):
+    def __init__(self, experiment_type, experiment_name=None,
+                 model=None, gpu_max_load=20, config=None,
+                 ):
         """ The config should contain the parameters needed for
         model.fit. If no config is given, default values are used.
 
@@ -42,94 +44,114 @@ class Experiment:
         param model: the model that is to be trained and evaluated
         """
 
-        self.model = model
-        self.history = None
         self.experiment_type = experiment_type
+        self.experiment_name = experiment_name
+        self.model = model
+
+        self.history = None
+        self.history_kfold = None
+
         # set experiment id, format from datetime today
         # yyyymmddhhmmssffffff where f is microseconds
         self.experiment_id = datetime.today().strftime('%Y%m%d%H%M%S%f')
-        self.experiment_name = experiment_name
 
-        # set gpu/cpu device
-        self.gpu_max_load = 20
-        self.tf_device = None
+        # set gpu/cpu device defaults
+        self.tf_device = get_tf_device(gpu_max_load)
 
-        # minor default config
+        # Set default config and append or replace with provided config.
+        self.config = None
+        self.set_config(config)
+
+    def set_config(self, config):
+        """ Set default config for model.fit and additional kfold cross-
+        validation arguments. If a config is provided to the function,
+        replace given keys with options.
+        """
+        # Get github repo root path
+        rpath = get_git_root()
         self.config = {
-            'batch_size': 32,
-            'epochs': 20,
-            'verbose': 2,
-            'callbacks': []
+            'fit_args': {
+                'batch_size': None,
+                'epochs': 1,
+                'verbose': 1,
+                'callbacks': None,
+                'validation_split': 0.,
+                'validation_data': None,
+                'shuffle': True,
+                'class_weight': None,
+                'sample_weight': None,
+                'initial_epoch': 0,
+                'steps_per_epoch': None,
+                'validation_steps': None,
+                'validation_batch_size': None,
+                'validation_freq': 1,
+                'max_queue_size': 10,
+                'workers': 1,
+                'use_multiprocessing': False
+            },
+            'kfold_args': {
+                'n_splits': 5,
+                'shuffle': False,
+                'random_state': None,
+            },
+            'path_args': {
+                'repo_root': rpath,
+                'models': rpath + 'models/',
+                'figures': rpath + 'figures/',
+                'experiments': rpath + 'experiments/',
+                'results': rpath + 'results',
+            }
         }
+        if config is not None:
+            for major_key in config.keys():
+                for k, v in config[major_key].items():
+                    self.config[major_key][k] = v
 
-    def run(self, x_train, y_train, x_val, y_val,
-            TF_DEVICE=None,
-            ):
+    def run(self, x_train, y_train, x_val, y_val):
         """ Single training run of the given model. It is assumed that the
         input data is preprocessed, normalized, and good to go.
         """
+        self.config['fit_args']['validation_data'] = (x_val, y_val)
         # Determine tensorflow device if not provided
         if self.tf_device is None:
             self.tf_device = get_tf_device(self.gpu_max_load)
-
-        # PATH variables
-        DATA_PATH = "../../data/simulated/"
-        OUTPUT_PATH = "../../data/output/"
-        MODEL_PATH = OUTPUT_PATH + "models/"
 
         with tf.device(self.tf_device):
             self.history = self.model.fit(
-                x_train,
-                y_train,
-                batch_size=self.config['batch_size'],
-                epochs=self.config['epochs'],
-                validation_data=(x_val, y_val),
-                verbose=self.config['verbose'],
-                callbacks=self.config['callbacks']
+                x=x_train,
+                y=y_train,
+                **self.config['fit_args'],
             )
 
-    def run_kfold(self, x, y, TF_DEVICE=None):
+    def run_kfold(self, x, y):
         """ Train the model using kfold cross-validation.
         """
-        # Determine tensorflow device if not provided
-        if self.tf_device is None:
-            self.tf_device = get_tf_device(self.gpu_max_load)
-
-        if 'n_folds' in self.config:
-            n_folds = self.config['n_folds']
-        else:
-            n_folds = 5
-
-        # Params for k-fold cross-validation
-        k_shuffle = True
 
         # StratifiedKFold doesn't take one-hot
         y = y.argmax(axis=-1)
 
         # Store accuracy for each fold for all models
-        k_fold_results = {}
+        results = {}
 
         # Create KFold data generator
-        skf = StratifiedKFold(n_splits=n_folds, shuffle=k_shuffle)
+        skf = StratifiedKFold(**self.config['kfold_args'])
 
         # Run k-fold cross-validation
-        fold = 0
+        fold = 0  # Track which fold
         for train_idx, val_idx in skf.split(x, y):
+            self.config['fit_args']['validation_data'] = (x[val_idx],
+                                                          y[val_idx])
 
             # Train model
             history = self.model.fit(
                 x[train_idx],
                 y[train_idx],
-                epochs=self.config['epochs'],
-                batch_size=self.config['batch_size'],
-                validation_data=(x[val_idx], y[val_idx]),
-                callbacks=self.config['callbacks']
+                **self.config['fit_args'],
             )
-
             # Store the accuracy
-            k_fold_results[fold] = history
-
-        raise NotImplementedError
+            results[fold] = history
+            fold += 1
+        self.history_kfold = results
 
     def output_experiment(self):
         """ Output a structured json file containing all model configuration
