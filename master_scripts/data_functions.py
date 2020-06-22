@@ -66,6 +66,63 @@ def get_tf_device(MAX_LOAD):
     return DEVICE
 
 
+def generate_dataset(path=None, num_samples=None):
+    """ Take a large datafile and output a smaller file
+    containing a balanced dataset of num_samples samples.
+    """
+
+    labels = []
+    lines = []
+
+    # read line by line to alleviate memory strain when files are large
+    with open(path, "r") as infile:
+        for line in infile:
+            lines.append(line)
+            line = np.fromstring(line, sep=' ')
+            image, energy, position = separate_simulated_data(line)
+            label = 0 if line[259] == 0 else 1
+            labels.append(label)
+
+    labels = np.array(labels)
+    # Pick a num_samples randomly selected samples such that the returned
+    # dataset contains a balanced number of single and double events.
+
+    # Convert to int so number can be provided on scientific form ex. 1e5
+    num_samples = int(num_samples)
+
+    # Get separate indices for single and double events based on labels
+    single_indices = np.array(np.where(labels == 0)[0])
+    double_indices = np.array(np.where(labels == 1)[0])
+
+    # Handle cases where number of samples is not an even number
+    if num_samples % 2 != 0:
+        num_double = num_samples // 2
+        num_single = num_double + 1
+    else:
+        num_single = num_double = num_samples // 2
+
+    # Handle cases where dataset contains fewer than num_samples/2 of
+    # an event type
+    if len(single_indices) < num_single:
+        num_single = len(single_indices)
+    if len(double_indices) < num_double:
+        num_double = len(double_indices)
+
+    # Draw random indices single and double indices
+    single_out = np.random.choice(
+        single_indices, size=num_single, replace=False)
+    double_out = np.random.choice(
+        double_indices, size=num_double, replace=False)
+
+    # Write selected samples to file
+    filename = "generated_dataset_" + str(num_samples) + ".txt"
+    with open(filename, "w") as outfile:
+        for idx in single_out:
+            outfile.write(line[idx])
+        for idx in double_out:
+            outfile.write(line[idx])
+
+
 def import_data(path=None, num_samples=None, scaling=False):
     """ Imports scintillator data as numpy arrays.
     Used together with analysis repository which has a strict folder
@@ -73,7 +130,7 @@ def import_data(path=None, num_samples=None, scaling=False):
 
     param path: Path to datafile
 
-    param num_samples:  How many samples to include. With large files,  
+    param num_samples:  How many samples to include. With large files,
                         memory might become an issue when loading full file.
                         If specified, the returned data will be a random,
                         balanced selection of data from the full dataset.
@@ -357,59 +414,63 @@ def load_feature_representation(filename, path=None):
     return np.load(OUTPUT_PATH + filename)
 
 
-def event_indices(positions, threshold=3.0):
+def event_indices(positions, threshold=1.0):
     """ Returns indices of events with a distance lower than a certain
     threshold to do further training on.
 
     param positions:    array of positions (x0, y0, x1, y1)
     param threshold:    float, the threshold which determines what is a
-                        'close' event.
+                        'close' event. 1.0 corresponds to 1 pixel
 
     returns:    Indices for single events, double events, and for the subset
                 of double events which are 'close' events.
     """
     indices_single = np.where(positions[:, 2] < 0)[0]
     indices_double = np.where(positions[:, 2] >= 0)[0]
-    dist = relative_distance(positions)
+    dist = separation_distance(positions)
     indices_close = np.nonzero((dist >= 0) == (dist < threshold))[0]
 
     return indices_single, indices_double, indices_close
 
 
-def relative_distance(positions):
-    """ Calculates the relative distance between events in a set of events.
+def separation_distance(positions):
+    """ Calculates the separation distance (in pixels) between double events
+    in a set of events.
 
     param positions: Array of positions for the dataset (x0, y0, x1, y1)
 
-    return: 1D array of relative distances between events.
-            single events have relative distance set to -100
+    return: 1D array of separation distances between events.
+            single events have separation distance set to -100
     """
 
     # Single events have the x1, y1 positions set to -100. We don't want to
-    # do anything about those and simply set the relative distance to -100.
+    # do anything about those and simply set the separation distance to -100.
     single_indices = np.where(positions[:, 2] < 0)[0]
     double_indices = np.where(positions[:, 2] >= 0)[0]
 
-    relative_dist = np.zeros((positions.shape[0], 1))
-    relative_dist[single_indices] = -100
+    separation_dist = np.zeros((positions.shape[0], 1))
+    separation_dist[single_indices] = -100
 
     # Standard euclidian distance between points
-    # np.sqrt((x0-x1)**2 + (y0-y1)**2)
-    # We also multiply by 3 to scale the distance from pixels to mm
-    relative_dist[double_indices] = np.sqrt(np.sum(
+    separation_dist[double_indices] = np.sqrt(np.sum(
         (positions[double_indices, 0:2]
-         - positions[double_indices, 2:])**2 * 3,
+         - positions[double_indices, 2:])**2,
         axis=1)).reshape(len(double_indices), 1)
 
-    return relative_dist
+    return separation_dist
 
 
-def relative_energy(energies, noscale=False):
+def relative_energy(energies, scale=False):
     """ Calculates the relative energy E1/E2 between event 1 and event 2 for all
     samples in a dataset which have two events.
 
-    param energies: Energies of events in the dataset, (E0, E1). For single
-                    events the energy of 'event 2' is set to 0 in the dataset.
+    param energies: Energies of events in the dataset, (E0, E1).
+                    For single events the energy of 'event 2' is set to
+                    0 in the dataset.
+
+    param scale:    Boolean, defaults to False. If True, scales the relative
+                    energies to [0, 1] by always dividing argmin(E1, E2) by
+                    argmax(E1, E2).
 
     return: 1D array of relative energies. single events have relative energy
             set to -100.
@@ -425,17 +486,17 @@ def relative_energy(energies, noscale=False):
     relative_energies = np.zeros((energies.shape[0], 1))
     relative_energies[single_indices] = -100
 
-    # Divide E1/E2 for all events.
-    if noscale:
-        relative_energies[double_indices] = np.reshape(
-            energies[double_indices, 0] / energies[double_indices, 1],
-            (len(double_indices), 1)
-        )
-    else:
+    if scale:
         # Divide amin(E1,E2) / amin(E1, E2)
         relative_energies[double_indices] = np.reshape(
             np.amin(energies[double_indices], axis=1)
             / np.amax(energies[double_indices], axis=1),
+            (len(double_indices), 1)
+        )
+    else:
+        # Divide E1/E2 for all events.
+        relative_energies[double_indices] = np.reshape(
+            energies[double_indices, 0] / energies[double_indices, 1],
             (len(double_indices), 1)
         )
 

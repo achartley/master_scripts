@@ -2,7 +2,6 @@ from datetime import datetime
 from sklearn.model_selection import StratifiedKFold
 from master_scripts.data_functions import get_tf_device, get_git_root
 import tensorflow as tf
-import git
 import json
 import warnings
 # Set warning options to get a bit cleaner output when running
