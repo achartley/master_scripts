@@ -117,9 +117,9 @@ def generate_dataset(path=None, num_samples=None):
     filename = "generated_dataset_" + str(num_samples) + ".txt"
     with open(filename, "w") as outfile:
         for idx in single_out:
-            outfile.write(line[idx])
+            outfile.write(lines[idx])
         for idx in double_out:
-            outfile.write(line[idx])
+            outfile.write(lines[idx])
 
 
 def import_data(path=None, num_samples=None, scaling=False):
