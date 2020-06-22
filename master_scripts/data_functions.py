@@ -78,9 +78,8 @@ def generate_dataset(path=None, num_samples=None):
     with open(path, "r") as infile:
         for line in infile:
             lines.append(line)
-            line = np.fromstring(line, sep=' ')
-            image, energy, position = separate_simulated_data(line)
-            label = 0 if line[259] == 0 else 1
+            tmp = np.fromstring(line, sep=' ')
+            label = 0 if tmp[259] == 0 else 1
             labels.append(label)
 
     labels = np.array(labels)
