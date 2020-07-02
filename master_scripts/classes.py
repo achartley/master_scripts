@@ -4,6 +4,7 @@ from master_scripts.data_functions import get_tf_device, get_git_root
 import tensorflow as tf
 import json
 import warnings
+import hashlib
 # Set warning options to get a bit cleaner output when running
 warnings.filterwarnings('ignore', category=FutureWarning)
 
@@ -46,13 +47,10 @@ class Experiment:
         self.experiment_type = experiment_type
         self.experiment_name = experiment_name
         self.model = model
+        self.experiment_id = None
 
         self.history = None
         self.history_kfold = None
-
-        # set experiment id, format from datetime today
-        # yyyymmddhhmmssffffff where f is microseconds
-        self.experiment_id = datetime.today().strftime('%Y%m%d%H%M%S%f')
 
         # set gpu/cpu device defaults
         self.tf_device = get_tf_device(gpu_max_load)
@@ -60,6 +58,22 @@ class Experiment:
         # Set default config and append or replace with provided config.
         self.config = None
         self.set_config(config)
+        self.set_experiment_id()
+
+    def set_experiment_id(self):
+        """ Creates a unique hash from the config parameters.
+        """
+        # yyyymmddhhmmssffffff where f is microseconds
+        id_string = datetime.today().strftime('%Y%m%d%H%M%S%f')
+        # Add stringified config values
+        for k in self.config.keys():
+            for v in self.config[k]:
+                id_string += str(v)
+
+        # Hash the full id_string and set id to first 12 elements
+        m = hashlib.md5()
+        m.update(id_string.encode('utf-8'))
+        self.experiment_id = m.hexdigest()[:12]
 
     def set_config(self, config):
         """ Set default config for model.fit and additional kfold cross-
@@ -99,6 +113,8 @@ class Experiment:
                 'figures': rpath + 'figures/',
                 'experiments': rpath + 'experiments/',
                 'results': rpath + 'results',
+            },
+            'optimizer_args': {
             }
         }
         if config is not None:
@@ -157,3 +173,11 @@ class Experiment:
         and parameters, as well as model evaulation metrics and results.
         """
         raise NotImplementedError
+
+
+if __name__ == "__main__":
+
+    test = Experiment(
+        experiment_type='classification',
+
+    )
