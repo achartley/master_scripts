@@ -33,8 +33,8 @@ class Experiment:
         inspection.
     """
 
-    def __init__(self, experiment_type, experiment_name=None,
-                 model=None, gpu_max_load=20, config=None,
+    def __init__(self, experiment_type, model=None, gpu_max_load=20,
+                 config=None
                  ):
         """ The config should contain the parameters needed for
         model.fit. If no config is given, default values are used.
@@ -45,7 +45,6 @@ class Experiment:
         """
 
         self.experiment_type = experiment_type
-        self.experiment_name = experiment_name
         self.model = model
         self.experiment_id = None
 
@@ -114,8 +113,6 @@ class Experiment:
                 'experiments': rpath + 'experiments/',
                 'results': rpath + 'results',
             },
-            'optimizer_args': {
-            }
         }
         if config is not None:
             for major_key in config.keys():
@@ -172,7 +169,24 @@ class Experiment:
         """ Output a structured json file containing all model configuration
         and parameters, as well as model evaulation metrics and results.
         """
-        raise NotImplementedError
+        output = {}
+        output['loss'] = self.model.loss
+        output['metrics'] = self.model.metrics_names
+        output['optimizer'] = self.model.optimizer.get_config
+        output['model'] = self.model.get_config()
+        output['experiment_config'] = self.config
+        output['experiment_type'] = self.experiment_type
+        output['experiment_id'] = self.experiment_id
+        if self.history_kfold:
+            output['history'] = self.history_kfold
+        else:
+            output['history'] = self.history
+
+        fpath = self.config['path_args']['experiments'] + \
+            self.experiment_id + ".json"
+
+        with open(fpath, 'w') as fp:
+            json.dump(output, fp, indent=2)
 
 
 if __name__ == "__main__":
