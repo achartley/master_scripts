@@ -350,30 +350,6 @@ def normalize_image_data(images):
     return images
 
 
-def normalize_real_data(events):
-    """ Takes the dict containing events and event information and normalizes
-    the images across the full set.
-    """
-    maxval = 0
-    minval = 99999999
-    image_mean = 0
-    for v in events.values():
-        imax = np.amax(v["image"])
-        imin = np.amin(v["image"])
-        if imax > maxval:
-            maxval = imax
-        if imin < minval:
-            minval = imin
-        image_mean += np.mean(v["image"])
-
-    image_term = maxval - minval
-    image_mean = image_mean / len(events.keys())
-    for v in events.values():
-        v['image'] = (v['image'] - image_mean) / image_term
-
-    return events
-
-
 def normalize_position_data(positions):
     """ Takes an imported set of positions and normalizes values to between
     0 and 1 simply dividing by 16.
