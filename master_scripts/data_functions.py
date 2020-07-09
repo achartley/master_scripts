@@ -165,12 +165,16 @@ def import_data(path=None):
             positions.append(pos)
             labels.append(label)
 
-    # Convert lists to numpy arrays and reshape them to remove the added axis
-    # conversion.
+    # Convert lists to numpy arrays
     images = np.array(images)
     energies = np.array(energies)
     positions = np.array(positions)
     labels = np.array(labels)
+
+    # Reshape and transpose images to align positions with spatial
+    # orientation of images
+    images = images.reshape((images.shape[0], 16, 16))
+    images = np.transpose(images, (0, 2, 1))
     return images, energies, positions, labels
 
 
