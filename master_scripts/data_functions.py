@@ -122,33 +122,17 @@ def generate_dataset(path=None, num_samples=None):
             outfile.write(lines[idx])
 
 
-def import_data(path=None, num_samples=None, scaling=False):
+def import_data(path=None):
     """ Imports scintillator data as numpy arrays.
     Used together with analysis repository which has a strict folder
     structure.
 
     param path: Path to datafile
 
-    param num_samples:  How many samples to include. With large files,
-                        memory might become an issue when loading full file.
-                        If specified, the returned data will be a random,
-                        balanced selection of data from the full dataset.
-
-    param scaling:  Whether or not to scale the image data to 0-1 interval.
-                    Defaults to False.
-
-
     returns:    dictionary of data where each filenames are keys and each
                 key,value pair contains dictionary of the data in the file,
                 separated into 'energies', 'positions', 'images', 'labels'.
     """
-
-    # Get individual file paths and filenames from data folder
-    # Load each datafile into a dictionary, using the filenames as keys
-    # Each key then contains a dict with keys 'energies', 'positions'
-    # 'images', and 'labels'
-
-    separated_data = {}
 
     # Temporary initialization of arrays-to-be
     images = []
@@ -156,91 +140,48 @@ def import_data(path=None, num_samples=None, scaling=False):
     positions = []
     labels = []
 
-    # read line by line to alleviate memory strain when files are large
+    # Read line by line to alleviate memory strain when files are large
+    # The first 256 values in each row correspond to the 16x16 detector image,
+    # the last 6 values correspond to Energy1, Xpos1, Ypos1, Energy2, Xpos2,
+    # Ypos2.
+
     with open(path, "r") as infile:
-        count = 0
         for line in infile:
             line = np.fromstring(line, sep=' ')
-            image, energy, position = separate_simulated_data(line)
-            label = label_simulated_data(line)
+            image = line[:256]
+            energy = np.array((line[256], line[259]))
+            pos = np.array((line[257], line[258], line[260], line[261]))
+
+            # Set label for the events. If Energy2 is 0 it is a single
+            # event. Any other values corresponds to a double event.
+            # We label single events as type 0, and doubles as type 1
+            if energy[1] == 0:
+                label = 0
+            else:
+                label = 1
 
             images.append(image)
             energies.append(energy)
-            positions.append(position)
+            positions.append(pos)
             labels.append(label)
-            count += 1
-            sys.stdout.flush()
 
-    # Convert lists to numpy arrays and reshape them to remove the added axis from
-    # conversion. TODO: Find a better way to do this?
+    # Convert lists to numpy arrays and reshape them to remove the added axis
+    # conversion.
     images = np.array(images)
     energies = np.array(energies)
     positions = np.array(positions)
     labels = np.array(labels)
-
-    images = images.reshape(
-        images.shape[0], images.shape[2], images.shape[3], images.shape[4])
-    energies = energies.reshape(energies.shape[0], energies.shape[2])
-    positions = positions.reshape(positions.shape[0], positions.shape[2])
-
-    # Pick a num_samples randomly selected samples such that the returned
-    # dataset contains a balanced number of single and double events.
-    if num_samples is not None and int(num_samples) < len(images):
-
-        # Convert to int so number can be provided on scientific form ex. 1e5
-        num_samples = int(num_samples)
-
-        # Get separate indices for single and double events based on labels
-        single_indices = np.array(np.where(labels == 0)[0])
-        double_indices = np.array(np.where(labels == 1)[0])
-
-        # Handle cases where number of samples is not an even number
-        if num_samples % 2 != 0:
-            num_double = num_samples // 2
-            num_single = num_double + 1
-        else:
-            num_single = num_double = num_samples // 2
-
-        # Handle cases where dataset contains fewer than num_samples/2 of
-        # an event type
-        if len(single_indices) < num_single:
-            num_single = len(single_indices)
-        if len(double_indices) < num_double:
-            num_double = len(double_indices)
-
-        # Draw random indices single and double indices
-        single_out = np.random.choice(
-            single_indices, size=num_single, replace=False)
-        double_out = np.random.choice(
-            double_indices, size=num_double, replace=False)
-
-        # Concatenate the selected images, energies, positions and labels.
-        images = np.concatenate(
-            (images[single_out], images[double_out]), axis=0)
-        energies = np.concatenate(
-            (energies[single_out], energies[double_out]), axis=0)
-        positions = np.concatenate(
-            (positions[single_out], positions[double_out]), axis=0)
-        labels = np.concatenate(
-            (labels[single_out], labels[double_out]), axis=0)
-
-    # Store the data for return
-    separated_data["images"] = images
-    separated_data["energies"] = energies
-    separated_data["positions"] = positions
-    separated_data["labels"] = labels
-
-    return separated_data
+    return images, energies, positions, labels
 
 
-def import_real_data(config, num_samples=None):
+def import_real_data(path, num_samples=None):
     """ Imports experimental data as numpy arrays.
     Used together with analysis repository which has a strict folder
     structure.
 
     param path: config containing paths, modelnames etc.
 
-    param num_samples:  How many samples to include. With large files,  
+    param num_samples:  How many samples to include. With large files,
                         memory might become an issue when loading full file.
                         If specified, the returned data will be the first
                         n samples
@@ -251,16 +192,15 @@ def import_real_data(config, num_samples=None):
                                         }
     """
 
-    filename = config["DATA_PATH"] + config["DATA_FILENAME"]
     # Dictionary for storing events
     events = {}
     images = []
     # read line by line to alleviate memory strain when files are large
-    with open(filename, "r") as infile:
+    with open(path, "r") as infile:
         image_idx = 0
         for line in infile:
             # If we have the desired amount of samples, return events.
-            if num_samples and len(event.keys()) == num_samples:
+            if num_samples and len(events.keys()) == num_samples:
                 return events
 
             line = np.fromstring(line, sep=' ')
