@@ -77,7 +77,7 @@ class Experiment:
     def set_config(self, config):
         """ Set default config for model.fit and additional kfold cross-
         validation arguments. If a config is provided to the function,
-        replace given keys with options.
+        replace given keys with the ones provided, and add new keys present.
         """
         # Get github repo root path
         rpath = get_git_root()
@@ -85,26 +85,10 @@ class Experiment:
             'fit_args': {
                 'batch_size': None,
                 'epochs': 1,
-                'verbose': 1,
-                'callbacks': None,
-                'validation_split': 0.,
-                'validation_data': None,
-                'shuffle': True,
-                'class_weight': None,
-                'sample_weight': None,
-                'initial_epoch': 0,
-                'steps_per_epoch': None,
-                'validation_steps': None,
-                'validation_batch_size': None,
-                'validation_freq': 1,
-                'max_queue_size': 10,
-                'workers': 1,
-                'use_multiprocessing': False
             },
             'kfold_args': {
                 'n_splits': 5,
                 'shuffle': False,
-                'random_state': None,
             },
             'path_args': {
                 'repo_root': rpath,
@@ -112,7 +96,9 @@ class Experiment:
                 'figures': rpath + 'figures/',
                 'experiments': rpath + 'experiments/',
                 'results': rpath + 'results',
+                'model_config': rpath + 'experiments/model_config/',
             },
+            'random_state': None,
         }
         if config is not None:
             for major_key in config.keys():
@@ -123,7 +109,7 @@ class Experiment:
         """ Single training run of the given model. It is assumed that the
         input data is preprocessed, normalized, and good to go.
         """
-        self.config['fit_args']['validation_data'] = (x_val, y_val)
+        # self.config['fit_args']['validation_data'] = (x_val, y_val)
         # Determine tensorflow device if not provided
         if self.tf_device is None:
             self.tf_device = get_tf_device(self.gpu_max_load)
@@ -132,8 +118,9 @@ class Experiment:
             self.history = self.model.fit(
                 x=x_train,
                 y=y_train,
+                validation_data=(x_val, y_val),
                 **self.config['fit_args'],
-            )
+            ).history
 
     def run_kfold(self, x, y):
         """ Train the model using kfold cross-validation.
@@ -166,27 +153,36 @@ class Experiment:
         self.history_kfold = results
 
     def output_experiment(self):
-        """ Output a structured json file containing all model configuration
-        and parameters, as well as model evaulation metrics and results.
+        """ Outputs two files:
+        - one experiment config with performance metrics and optimizer
+        information, fit parameters etc
+        - model config, loadable with tf.keras.models.model_from_json.
         """
+
+        # Collect information into a dictionary
         output = {}
         output['loss'] = self.model.loss
         output['metrics'] = self.model.metrics_names
-        output['optimizer'] = self.model.optimizer.get_config
-        output['model'] = self.model.get_config()
+        output['optimizer'] = tf.keras.optimizers.get_config()
         output['experiment_config'] = self.config
         output['experiment_type'] = self.experiment_type
         output['experiment_id'] = self.experiment_id
+
         if self.history_kfold:
             output['history'] = self.history_kfold
         else:
             output['history'] = self.history
 
-        fpath = self.config['path_args']['experiments'] + \
+        experiment_fpath = self.config['path_args']['experiments'] + \
             self.experiment_id + ".json"
 
-        with open(fpath, 'w') as fp:
+        model_fpath = self.config['path_args']['model_config'] + \
+            "model_" + self.experiment_id + ".json"
+
+        with open(experiment_fpath, 'w') as fp:
             json.dump(output, fp, indent=2)
+        with open(model_fpath, 'w') as fp:
+            fp.write(self.model.to_json())
 
 
 if __name__ == "__main__":
