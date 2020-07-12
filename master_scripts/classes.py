@@ -57,7 +57,9 @@ class Experiment:
         self.metrics_kfold = {}
 
         # set gpu/cpu device defaults
+        print("CHOOSING GPU NOW")
         self.tf_device = get_tf_device(gpu_max_load)
+        print("CHOSE DEVICE: ", self.tf_device)
 
         # Set default config and append or replace with provided config.
         self.config = None
