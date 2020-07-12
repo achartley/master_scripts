@@ -1,5 +1,7 @@
 from datetime import datetime
 from sklearn.model_selection import StratifiedKFold
+from sklearn.metrics import (matthews_corrcoef, f1_score, confusion_matrix,
+                             roc_auc_score, accuracy_score)
 from master_scripts.data_functions import get_tf_device, get_git_root
 import tensorflow as tf
 import json
@@ -39,7 +41,7 @@ class Experiment:
         """ The config should contain the parameters needed for
         model.fit. If no config is given, default values are used.
 
-        param experiment_type: 'classification' or 'prediction'
+        param experiment_type: <name>_'classification' or <name>_'prediction'
         param experiment_name: optional name to include in output title
         param model: the model that is to be trained and evaluated
         """
@@ -49,7 +51,10 @@ class Experiment:
         self.experiment_id = None
 
         self.history = None
+        self.metrics = {}
+
         self.history_kfold = None
+        self.metrics_kfold = {}
 
         # set gpu/cpu device defaults
         self.tf_device = get_tf_device(gpu_max_load)
@@ -58,21 +63,6 @@ class Experiment:
         self.config = None
         self.set_config(config)
         self.set_experiment_id()
-
-    def set_experiment_id(self):
-        """ Creates a unique hash from the config parameters.
-        """
-        # yyyymmddhhmmssffffff where f is microseconds
-        id_string = datetime.today().strftime('%Y%m%d%H%M%S%f')
-        # Add stringified config values
-        for k in self.config.keys():
-            for v in self.config[k]:
-                id_string += str(v)
-
-        # Hash the full id_string and set id to first 12 elements
-        m = hashlib.md5()
-        m.update(id_string.encode('utf-8'))
-        self.experiment_id = m.hexdigest()[:12]
 
     def set_config(self, config):
         """ Set default config for model.fit and additional kfold cross-
@@ -98,12 +88,34 @@ class Experiment:
                 'results': rpath + 'results',
                 'model_config': rpath + 'experiments/model_config/',
             },
-            'random_state': None,
+            'random_seed': None,
         }
         if config is not None:
             for major_key in config.keys():
-                for k, v in config[major_key].items():
-                    self.config[major_key][k] = v
+                # Treat the value as dict, save directly if not dict
+                try:
+                    for k, v in config[major_key].items():
+                        self.config[major_key][k] = v
+                except AttributeError:
+                    self.config[major_key] = config[major_key]
+
+    def set_experiment_id(self):
+        """ Creates a unique hash from the config parameters.
+        """
+        # yyyymmddhhmmssffffff where f is microseconds
+        id_string = datetime.today().strftime('%Y%m%d%H%M%S%f')
+        # Add stringified config values
+        for k in self.config.keys():
+            try:
+                for v in self.config[k].values():
+                    id_string += str(v)
+            except AttributeError:
+                id_string += str(self.config[k])
+
+        # Hash the full id_string and set id to first 12 elements
+        m = hashlib.md5()
+        m.update(id_string.encode('utf-8'))
+        self.experiment_id = m.hexdigest()[:12]
 
     def run(self, x_train, y_train, x_val, y_val):
         """ Single training run of the given model. It is assumed that the
@@ -122,6 +134,12 @@ class Experiment:
                 **self.config['fit_args'],
             ).history
 
+        # Calculate metrics for the model
+        if "classification" in self.experiment_type:
+            self.classification_metrics(x_val, y_val)
+        elif "regression" in self.experiment_type:
+            self.regression_metrics(x_val, y_val)
+
     def run_kfold(self, x, y):
         """ Train the model using kfold cross-validation.
         """
@@ -133,26 +151,67 @@ class Experiment:
         results = {}
 
         # Create KFold data generator
-        skf = StratifiedKFold(**self.config['kfold_args'])
+        skf = StratifiedKFold(
+            random_state=self.config['random_seed'],
+            **self.config['kfold_args']
+        )
 
         # Run k-fold cross-validation
         fold = 0  # Track which fold
         for train_idx, val_idx in skf.split(x, y):
-            self.config['fit_args']['validation_data'] = (x[val_idx],
-                                                          y[val_idx])
 
             # Train model
             history = self.model.fit(
                 x[train_idx],
                 y[train_idx],
-                **self.config['fit_args'],
+                validation_data=(x[val_idx], y[val_idx]),
+                ** self.config['fit_args'],
             )
             # Store the accuracy
             results[fold] = history
+            # Calculate metrics for the model
+            if "classification" in self.experiment_type:
+                self.classification_metrics(x[val_idx], y[val_idx], fold)
+            elif "regression" in self.experiment_type:
+                self.regression_metrics(x[val_idx], y[val_idx], fold)
             fold += 1
         self.history_kfold = results
 
-    def output_experiment(self):
+    def regression_metrics(self, x_val, y_val, fold=None):
+        raise NotImplementedError
+
+    def classification_metrics(self, x_val, y_val, fold=None):
+        """ Calculates f1_score, matthews_corrcoef, confusion matrix and
+        roc area under curve, accuracy metrics and stores them in the
+        metrics attribute.
+        The values are calculated based on the validation data.
+
+        Recall that the default positive class for f1_score is 1
+        """
+
+        # Get prediction and make class labels based on threshold of 0.5
+        y_out = self.model.predict(x_val)
+        y_pred = y_out > 0.5
+        metrics = {}
+        confmat = confusion_matrix(y_val, y_pred)
+
+        metrics['accuracy'] = accuracy_score(y_val, y_pred)
+        metrics['confusion_matrix'] = {
+            'TN': int(confmat[0, 0]),
+            'TP': int(confmat[0, 1]),
+            'FN': int(confmat[1, 0]),
+            'FP': int(confmat[1, 1]),
+        }
+        metrics['f1_score'] = f1_score(y_val, y_pred)
+        metrics['matthews_corrcoef'] = matthews_corrcoef(y_val, y_pred)
+        metrics['roc_auc_score'] = roc_auc_score(y_val, y_out)
+
+        if fold:
+            self.metrics_kfold[fold] = metrics
+        else:
+            self.metrics = metrics
+
+    def save(self):
         """ Outputs two files:
         - one experiment config with performance metrics and optimizer
         information, fit parameters etc
@@ -162,17 +221,20 @@ class Experiment:
         # Collect information into a dictionary
         output = {}
         output['loss'] = self.model.loss
-        output['metrics'] = self.model.metrics_names
-        output['optimizer'] = tf.keras.optimizers.get_config()
+        output['optimizer'] = str(self.model.optimizer.get_config())
         output['experiment_config'] = self.config
         output['experiment_type'] = self.experiment_type
         output['experiment_id'] = self.experiment_id
+        output['datetime'] = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
 
         if self.history_kfold:
             output['history'] = self.history_kfold
+            output['metrics'] = self.metrics_kfold
         else:
             output['history'] = self.history
+            output['metrics'] = self.metrics
 
+        # Write to files
         experiment_fpath = self.config['path_args']['experiments'] + \
             self.experiment_id + ".json"
 
@@ -183,10 +245,3 @@ class Experiment:
             json.dump(output, fp, indent=2)
         with open(model_fpath, 'w') as fp:
             fp.write(self.model.to_json())
-
-
-if __name__ == "__main__":
-
-    test = Experiment(
-        experiment_type='classification',
-    )
