@@ -3,6 +3,7 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import (matthews_corrcoef, f1_score, confusion_matrix,
                              roc_auc_score, accuracy_score)
 from master_scripts.data_functions import get_git_root
+import tensorflow as tf
 import json
 import warnings
 import hashlib
@@ -110,6 +111,15 @@ class Experiment:
         m = hashlib.md5()
         m.update(id_string.encode('utf-8'))
         self.experiment_id = m.hexdigest()[:12]
+
+    def load_model(self, experiment_id):
+        """ Load a model from a given experiment.
+
+        param experiment_id: 12-character hash id from some previously
+            executed experiment
+        """
+        model_dir = self.config['path_args']['model_config']
+        self.model = tf.keras.model_from_json(model_dir + experiment_id)
 
     def run(self, x_train, y_train, x_val, y_val):
         """ Single training run of the given model. It is assumed that the
