@@ -134,11 +134,11 @@ class Experiment:
                 **self.config['fit_args'],
             ).history
 
-        # Calculate metrics for the model
-        if "classification" in self.experiment_type:
-            self.classification_metrics(x_val, y_val)
-        elif "regression" in self.experiment_type:
-            self.regression_metrics(x_val, y_val)
+            # Calculate metrics for the model
+            if "classification" in self.experiment_type:
+                self.classification_metrics(x_val, y_val)
+            elif "regression" in self.experiment_type:
+                self.regression_metrics(x_val, y_val)
 
     def run_kfold(self, x, y):
         """ Train the model using kfold cross-validation.
@@ -158,24 +158,25 @@ class Experiment:
 
         # Run k-fold cross-validation
         fold = 0  # Track which fold
-        for train_idx, val_idx in skf.split(x, y):
+        with tf.device(self.tf_device):
+            for train_idx, val_idx in skf.split(x, y):
 
-            # Train model
-            history = self.model.fit(
-                x[train_idx],
-                y[train_idx],
-                validation_data=(x[val_idx], y[val_idx]),
-                ** self.config['fit_args'],
-            )
-            # Store the accuracy
-            results[fold] = history
-            # Calculate metrics for the model
-            if "classification" in self.experiment_type:
-                self.classification_metrics(x[val_idx], y[val_idx], fold)
-            elif "regression" in self.experiment_type:
-                self.regression_metrics(x[val_idx], y[val_idx], fold)
-            fold += 1
-        self.history_kfold = results
+                # Train model
+                history = self.model.fit(
+                    x[train_idx],
+                    y[train_idx],
+                    validation_data=(x[val_idx], y[val_idx]),
+                    ** self.config['fit_args'],
+                )
+                # Store the accuracy
+                results[fold] = history
+                # Calculate metrics for the model
+                if "classification" in self.experiment_type:
+                    self.classification_metrics(x[val_idx], y[val_idx], fold)
+                elif "regression" in self.experiment_type:
+                    self.regression_metrics(x[val_idx], y[val_idx], fold)
+                fold += 1
+            self.history_kfold = results
 
     def regression_metrics(self, x_val, y_val, fold=None):
         raise NotImplementedError
