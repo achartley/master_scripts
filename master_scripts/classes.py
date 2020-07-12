@@ -121,10 +121,6 @@ class Experiment:
         """ Single training run of the given model. It is assumed that the
         input data is preprocessed, normalized, and good to go.
         """
-        # self.config['fit_args']['validation_data'] = (x_val, y_val)
-        # Determine tensorflow device if not provided
-        if self.tf_device is None:
-            self.tf_device = get_tf_device(self.gpu_max_load)
 
         with tf.device(self.tf_device):
             self.history = self.model.fit(
@@ -134,11 +130,11 @@ class Experiment:
                 **self.config['fit_args'],
             ).history
 
-            # Calculate metrics for the model
-            if "classification" in self.experiment_type:
-                self.classification_metrics(x_val, y_val)
-            elif "regression" in self.experiment_type:
-                self.regression_metrics(x_val, y_val)
+        # Calculate metrics for the model
+        if "classification" in self.experiment_type:
+            self.classification_metrics(x_val, y_val)
+        elif "regression" in self.experiment_type:
+            self.regression_metrics(x_val, y_val)
 
     def run_kfold(self, x, y):
         """ Train the model using kfold cross-validation.
@@ -190,27 +186,28 @@ class Experiment:
         Recall that the default positive class for f1_score is 1
         """
 
-        # Get prediction and make class labels based on threshold of 0.5
-        y_out = self.model.predict(x_val)
-        y_pred = y_out > 0.5
-        metrics = {}
-        confmat = confusion_matrix(y_val, y_pred)
+        with tf.device(self.tf_device):
+            # Get prediction and make class labels based on threshold of 0.5
+            y_out = self.model.predict(x_val)
+            y_pred = y_out > 0.5
+            metrics = {}
+            confmat = confusion_matrix(y_val, y_pred)
 
-        metrics['accuracy'] = accuracy_score(y_val, y_pred)
-        metrics['confusion_matrix'] = {
-            'TN': int(confmat[0, 0]),
-            'TP': int(confmat[0, 1]),
-            'FN': int(confmat[1, 0]),
-            'FP': int(confmat[1, 1]),
-        }
-        metrics['f1_score'] = f1_score(y_val, y_pred)
-        metrics['matthews_corrcoef'] = matthews_corrcoef(y_val, y_pred)
-        metrics['roc_auc_score'] = roc_auc_score(y_val, y_out)
+            metrics['accuracy'] = accuracy_score(y_val, y_pred)
+            metrics['confusion_matrix'] = {
+                'TN': int(confmat[0, 0]),
+                'TP': int(confmat[0, 1]),
+                'FN': int(confmat[1, 0]),
+                'FP': int(confmat[1, 1]),
+            }
+            metrics['f1_score'] = f1_score(y_val, y_pred)
+            metrics['matthews_corrcoef'] = matthews_corrcoef(y_val, y_pred)
+            metrics['roc_auc_score'] = roc_auc_score(y_val, y_out)
 
-        if fold:
-            self.metrics_kfold[fold] = metrics
-        else:
-            self.metrics = metrics
+            if fold:
+                self.metrics_kfold[fold] = metrics
+            else:
+                self.metrics = metrics
 
     def save(self):
         """ Outputs two files:
