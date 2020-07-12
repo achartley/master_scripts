@@ -195,7 +195,7 @@ class Experiment:
         confmat = confusion_matrix(y_val, y_pred)
         print(confmat)
 
-        metrics['accuracy'] = accuracy_score(y_val, y_pred)
+        metrics['accuracy_score'] = accuracy_score(y_val, y_pred)
         metrics['confusion_matrix'] = {
             'TN': int(confmat[0, 0]),
             'TP': int(confmat[0, 1]),
