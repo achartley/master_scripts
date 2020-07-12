@@ -58,7 +58,8 @@ class Experiment:
 
         # set gpu/cpu device defaults
         print("CHOOSING GPU NOW")
-        self.tf_device = get_tf_device(gpu_max_load)
+        #self.tf_device = get_tf_device(gpu_max_load)
+        self.tf_device = '/GPU:3'
         print("CHOSE DEVICE: ", self.tf_device)
 
         # Set default config and append or replace with provided config.
