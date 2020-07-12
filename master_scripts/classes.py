@@ -2,8 +2,7 @@ from datetime import datetime
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import (matthews_corrcoef, f1_score, confusion_matrix,
                              roc_auc_score, accuracy_score)
-from master_scripts.data_functions import get_tf_device, get_git_root
-import tensorflow as tf
+from master_scripts.data_functions import get_git_root
 import json
 import warnings
 import hashlib
@@ -184,6 +183,7 @@ class Experiment:
         y_pred = y_out > 0.5
         metrics = {}
         confmat = confusion_matrix(y_val, y_pred)
+        print(confmat)
 
         metrics['accuracy'] = accuracy_score(y_val, y_pred)
         metrics['confusion_matrix'] = {
