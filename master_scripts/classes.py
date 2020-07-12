@@ -35,17 +35,19 @@ class Experiment:
         inspection.
     """
 
-    def __init__(self, experiment_type, model=None, config=None):
+    def __init__(self, model=None, config=None, model_type=None,
+                 experiment_name=None):
         """ The config should contain the parameters needed for
         model.fit. If no config is given, default values are used.
 
-        param experiment_type: <name>_'classification' or <name>_'prediction'
-        param experiment_name: optional name to include in output title
         param model: the model that is to be trained and evaluated
+        param model_type: 'classification' or 'regression'
+        param experiment_name: optional name to include in output
         """
 
-        self.experiment_type = experiment_type
         self.model = model
+        self.model_type = model_type
+        self.experiment_name = experiment_name
         self.experiment_id = None
 
         self.history = None
@@ -134,9 +136,9 @@ class Experiment:
         ).history
 
         # Calculate metrics for the model
-        if "classification" in self.experiment_type:
+        if self.model_type == "classification":
             self.classification_metrics(x_val, y_val)
-        elif "regression" in self.experiment_type:
+        elif self.model_type == "regression":
             self.regression_metrics(x_val, y_val)
 
     def run_kfold(self, x, y):
@@ -169,9 +171,9 @@ class Experiment:
             # Store the accuracy
             results[fold] = history
             # Calculate metrics for the model
-            if "classification" in self.experiment_type:
+            if self.model_type == "classification":
                 self.classification_metrics(x[val_idx], y[val_idx], fold)
-            elif "regression" in self.experiment_type:
+            elif self.model_type == "regression":
                 self.regression_metrics(x[val_idx], y[val_idx], fold)
             fold += 1
         self.history_kfold = results
@@ -223,7 +225,8 @@ class Experiment:
         output['loss'] = self.model.loss
         output['optimizer'] = str(self.model.optimizer.get_config())
         output['experiment_config'] = self.config
-        output['experiment_type'] = self.experiment_type
+        output['model_type'] = self.model_type
+        output['experiment_name'] = self.experiment_name
         output['experiment_id'] = self.experiment_id
         output['datetime'] = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
 
