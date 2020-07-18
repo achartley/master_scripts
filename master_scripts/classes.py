@@ -200,9 +200,9 @@ class Experiment:
         metrics['accuracy_score'] = accuracy_score(y_val, y_pred)
         metrics['confusion_matrix'] = {
             'TN': int(confmat[0, 0]),
-            'TP': int(confmat[0, 1]),
+            'FP': int(confmat[0, 1]),
             'FN': int(confmat[1, 0]),
-            'FP': int(confmat[1, 1]),
+            'TP': int(confmat[1, 1]),
         }
         metrics['f1_score'] = f1_score(y_val, y_pred)
         metrics['matthews_corrcoef'] = matthews_corrcoef(y_val, y_pred)
