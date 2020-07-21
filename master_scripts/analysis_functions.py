@@ -1,6 +1,6 @@
 import numpy as np
 import json
-import pandas as pd
+import pandas
 from master_scripts.data_functions import get_git_root
 
 
@@ -37,7 +37,7 @@ def r2_score(y_true, y_pred):
 
 def load_experiment(e_id):
     repo_root = get_git_root()
-    e_path = repo_root + "experiments/searches/"
+    e_path = repo_root + "experiments/"
     with open(e_path + e_id + ".json", "r") as fp:
         e = json.load(fp)
     return e
@@ -47,9 +47,8 @@ def load_hparam_search(name):
     """ Reads json-formatted hparam search file spec to pandas DF,
     and loads additional metrics into the dataframe.
     """
-    repo_root = get_git_root()
-    hpath = repo_root + "experiments/"
-    df = pd.read_json(
+    hpath = get_git_root() + "experiments/searches/"
+    df = pandas.read_json(
         hpath + name, orient='index').rename_axis('id').reset_index()
     # JSON convert the tuples in hparam search to list when it's interpreted.
     # Convert the values to str to make it workable
