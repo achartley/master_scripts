@@ -1,7 +1,8 @@
 from datetime import datetime
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import (matthews_corrcoef, f1_score, confusion_matrix,
-                             roc_auc_score, accuracy_score)
+                             roc_auc_score, accuracy_score, r2_score,
+                             mean_squared_error, mean_absolute_error)
 from master_scripts.data_functions import get_git_root
 import tensorflow as tf
 import json
@@ -179,7 +180,21 @@ class Experiment:
         self.history_kfold = results
 
     def regression_metrics(self, x_val, y_val, fold=None):
-        raise NotImplementedError
+        """ Calculates regression metrics on the validation data.
+        """
+
+        # Get prediction and make class labels based on threshold of 0.5
+        y_pred = self.model.predict(x_val)
+        metrics = {}
+
+        metrics['r2_score'] = r2_score(y_val, y_pred)
+        metrics['mse'] = mean_squared_error(y_val, y_pred)
+        metrics['rmse'] = mean_squared_error(y_val, y_pred, squared=False)
+        metrics['mae'] = mean_absolute_error(y_val, y_pred)
+        if fold:
+            self.metrics_kfold[fold] = metrics
+        else:
+            self.metrics = metrics
 
     def classification_metrics(self, x_val, y_val, fold=None):
         """ Calculates f1_score, matthews_corrcoef, confusion matrix and
