@@ -13,8 +13,7 @@ def position_single_cnn(input_shape=(16, 16, 1)):
                      input_shape=input_shape, activation='relu'))
     model.add(Flatten())
     model.add(Dense(512, activation='relu'))
-    model.add(Dense(2))
-    model.add(Activation('linear'))
+    model.add(Dense(2, activation='linear'))
 
     return model
 
