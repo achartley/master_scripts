@@ -49,7 +49,7 @@ class Experiment:
         self.model = model
         self.model_type = model_type
         self.experiment_name = experiment_name
-        self.experiment_id = None
+        self.id = None
 
         self.history = None
         self.metrics = {}
@@ -113,7 +113,7 @@ class Experiment:
         # Hash the full id_string and set id to first 12 elements
         m = hashlib.md5()
         m.update(id_string.encode('utf-8'))
-        self.experiment_id = m.hexdigest()[:12]
+        self.id = m.hexdigest()[:12]
 
     def load_model(self, experiment_id):
         """ Load a model from a given experiment.
@@ -242,7 +242,7 @@ class Experiment:
         output['experiment_config'] = self.config
         output['model_type'] = self.model_type
         output['experiment_name'] = self.experiment_name
-        output['experiment_id'] = self.experiment_id
+        output['experiment_id'] = self.id
         output['datetime'] = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
 
         if self.history_kfold:
@@ -254,10 +254,10 @@ class Experiment:
 
         # Write to files
         experiment_fpath = self.config['path_args']['experiments'] + \
-            self.experiment_id + ".json"
+            self.id + ".json"
 
         model_fpath = self.config['path_args']['model_config'] + \
-            "model_" + self.experiment_id + ".json"
+            "model_" + self.id + ".json"
 
         with open(experiment_fpath, 'w') as fp:
             json.dump(output, fp, indent=2)
