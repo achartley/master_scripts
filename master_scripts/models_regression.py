@@ -118,8 +118,7 @@ def position_dense():
 
 
 def position_classification_cnn():
-    """ The same model as used for classification, but without
-    the top dense layers.
+    """ The same model as used for classification
     """
 
     model = Sequential()
