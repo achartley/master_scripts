@@ -1,7 +1,10 @@
 import numpy as np
 import json
-import pandas
-from master_scripts.data_functions import get_git_root
+import pandas as pd
+from master_scripts.data_functions import (get_git_root, relative_energy,
+                                           separation_distance,
+                                           energy_difference,
+                                           event_indices)
 
 
 def calc_kfold_accuracies(acc_list):
@@ -48,7 +51,7 @@ def load_hparam_search(name):
     and loads additional metrics into the dataframe.
     """
     hpath = get_git_root() + "experiments/searches/"
-    df = pandas.read_json(
+    df = pd.read_json(
         hpath + name, orient='index').rename_axis('id').reset_index()
     # JSON convert the tuples in hparam search to list when it's interpreted.
     # Convert the values to str to make it workable
@@ -69,3 +72,119 @@ def load_hparam_search(name):
     df['matthews_corrcoef'] = mcc
     df['roc_auc_score'] = auc
     return df
+
+
+def double_event_indices(prediction, d_idx, c_idx):
+    """Generates indices for correct and wrong classifications for double
+    events, specifically. Indices for all doubles and events with small
+    separation distances ('close doubles') are generated.
+
+    param prediction: class predictions to generate indices for
+    param d_idx: indices for all double events in the predictions
+    param c_idx: indices for close double events in the predictions
+
+    returns c_doubles: indices for all correct doubles
+            w_doubles: indices for all wrong doubles
+            c_close_doubles: indices for correct close doubles
+            w_close_doubles: indices for wrong close doubles
+    """
+    c_doubles = np.where(prediction[d_idx] == 1)[0]
+    w_doubles = np.where(prediction[d_idx] == 0)[0]
+    c_close_doubles = np.where(prediction[c_idx] == 1)[0]
+    w_close_doubles = np.where(prediction[c_idx] == 0)[0]
+
+    return c_doubles, w_doubles, c_close_doubles, w_close_doubles
+
+
+def doubles_stats(indices, positions, energies):
+    """Outputs calculated separation distances, relative energies,
+    and energy differences as a pandas DataFrame.
+    """
+
+    sep_dist = separation_distance(positions[indices])
+    energy_diff = energy_difference(energies[indices])
+    rel_energy = relative_energy(energies[indices], scale=False)
+
+    df = pd.DataFrame(
+        data={
+            "Separation distance": sep_dist.flatten(),
+            "Relative energy": rel_energy.flatten(),
+            "Energy difference": energy_diff.flatten(),
+        },
+        index=np.arange(indices.shape[0])
+    )
+    return df
+
+
+def mean_values_doubles(indices, positions, energies, prediction):
+    """Calculates mean values specific to double events and stores the results
+    in a pandas dataframe.
+    """
+    s_idx, d_idx, c_idx = event_indices(positions[indices], threshold=1.0)
+    sep_dist = separation_distance(positions[indices])
+    energy_diff = energy_difference(energies[indices])
+    rel_energy = relative_energy(energies[indices], scale=False)
+
+    # Get indices
+    (
+        c_doubles,
+        w_doubles,
+        c_close_doubles,
+        w_close_doubles
+    ) = double_event_indices(prediction, d_idx, c_idx)
+
+    # Mean distances
+    mean_dist_all = np.mean(sep_dist[d_idx])
+    mean_dist_c = np.mean(sep_dist[d_idx][c_doubles])
+    mean_dist_w = np.mean(sep_dist[d_idx][w_doubles])
+    mean_dist_close_c = np.mean(sep_dist[c_idx][c_close_doubles])
+    mean_dist_close_w = np.mean(sep_dist[c_idx][w_close_doubles])
+
+    # Mean relative energy
+    mean_energy_all = np.mean(rel_energy[d_idx])
+    mean_energy_c = np.mean(rel_energy[d_idx][c_doubles])
+    mean_energy_w = np.mean(rel_energy[d_idx][w_doubles])
+    mean_energy_close_c = np.mean(rel_energy[c_idx][c_close_doubles])
+    mean_energy_close_w = np.mean(rel_energy[c_idx][w_close_doubles])
+
+    # Mean energy difference
+    mean_ediff_all = np.mean(energy_diff[d_idx])
+    mean_ediff_c = np.mean(energy_diff[d_idx][c_doubles])
+    mean_ediff_w = np.mean(energy_diff[d_idx][w_doubles])
+    mean_ediff_close_c = np.mean(energy_diff[c_idx][c_close_doubles])
+    mean_ediff_close_w = np.mean(energy_diff[c_idx][w_close_doubles])
+
+    df_means = pd.DataFrame(
+        data={
+            "Separation distance [px]": [
+                mean_dist_all,
+                mean_dist_c,
+                mean_dist_w,
+                mean_dist_close_c,
+                mean_dist_close_w
+            ],
+            "Relative energy": [
+                mean_energy_all,
+                mean_energy_c,
+                mean_energy_w,
+                mean_energy_close_c,
+                mean_energy_close_w,
+            ],
+            "Energy difference": [
+                mean_ediff_all,
+                mean_ediff_c,
+                mean_ediff_w,
+                mean_ediff_close_c,
+                mean_ediff_close_w,
+            ]
+        },
+        index=[
+            "All doubles",
+            "Correct",
+            "Wrong",
+            "Correct close",
+            "Wrong close",
+        ]
+    )
+
+    return df_means
