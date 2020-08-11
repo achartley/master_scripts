@@ -338,11 +338,11 @@ def event_indices(positions, threshold=1.0):
     """ Returns indices of events with a distance lower than a certain
     threshold to do further training on.
 
-    param positions:    array of positions (x0, y0, x1, y1)
-    param threshold:    float, the threshold which determines what is a
+    :param positions:    array of positions (x0, y0, x1, y1)
+    :param threshold:    float, the threshold which determines what is a
                         'close' event. 1.0 corresponds to 1 pixel
 
-    returns:    Indices for single events, double events, and for the subset
+    :returns:    Indices for single events, double events, and for the subset
                 of double events which are 'close' events.
     """
     indices_single = np.where(positions[:, 2] < 0)[0]

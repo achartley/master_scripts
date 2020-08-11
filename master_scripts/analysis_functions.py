@@ -96,95 +96,35 @@ def double_event_indices(prediction, d_idx, c_idx):
     return c_doubles, w_doubles, c_close_doubles, w_close_doubles
 
 
-def doubles_stats(indices, positions, energies):
+def doubles_classification_stats(positions, energies, classification,
+                                 close_max=1.0):
     """Outputs calculated separation distances, relative energies,
-    and energy differences as a pandas DataFrame.
+    and energy differences for double events in the dataset.
+
+
+    :param positions:    event positions of interest, e.g validation positions
+    :param energies:     event energies of interest, e.g validation energies
+    :param classification:  event classification result
+    :param close_max:    Upper limit to what is to be considered a 'close'
+                        event. Defaults to 1.0 pixels.
+
+    :return df_doubles: DataFrame containing information about double events
     """
 
-    sep_dist = separation_distance(positions[indices])
-    energy_diff = energy_difference(energies[indices])
-    rel_energy = relative_energy(energies[indices], scale=False)
+    s_idx, d_idx, c_idx = event_indices(positions, close_max)
+    sep_dist = separation_distance(positions[d_idx])
+    energy_diff = energy_difference(energies[d_idx])
+    rel_energy = relative_energy(energies[d_idx], scale=False)
 
-    df = pd.DataFrame(
+    df_doubles = pd.DataFrame(
         data={
-            "Separation distance": sep_dist.flatten(),
-            "Relative energy": rel_energy.flatten(),
-            "Energy difference": energy_diff.flatten(),
+            "close": np.isin(d_idx, c_idx),
+            "separation distance": sep_dist.flatten(),
+            "relative energy": rel_energy.flatten(),
+            "energy difference": energy_diff.flatten(),
+            "classification": classification[d_idx].flatten(),
+            "indices": d_idx.flatten(),
         },
-        index=np.arange(indices.shape[0])
+        index=np.arange(d_idx.shape[0])
     )
-    return df
-
-
-def mean_values_doubles(indices, positions, energies, prediction):
-    """Calculates mean values specific to double events and stores the results
-    in a pandas dataframe.
-    """
-    s_idx, d_idx, c_idx = event_indices(positions[indices], threshold=1.0)
-    sep_dist = separation_distance(positions[indices])
-    energy_diff = energy_difference(energies[indices])
-    rel_energy = relative_energy(energies[indices], scale=False)
-
-    # Get indices
-    (
-        c_doubles,
-        w_doubles,
-        c_close_doubles,
-        w_close_doubles
-    ) = double_event_indices(prediction, d_idx, c_idx)
-
-    # Mean distances
-    mean_dist_all = np.mean(sep_dist[d_idx])
-    mean_dist_c = np.mean(sep_dist[d_idx][c_doubles])
-    mean_dist_w = np.mean(sep_dist[d_idx][w_doubles])
-    mean_dist_close_c = np.mean(sep_dist[c_idx][c_close_doubles])
-    mean_dist_close_w = np.mean(sep_dist[c_idx][w_close_doubles])
-
-    # Mean relative energy
-    mean_energy_all = np.mean(rel_energy[d_idx])
-    mean_energy_c = np.mean(rel_energy[d_idx][c_doubles])
-    mean_energy_w = np.mean(rel_energy[d_idx][w_doubles])
-    mean_energy_close_c = np.mean(rel_energy[c_idx][c_close_doubles])
-    mean_energy_close_w = np.mean(rel_energy[c_idx][w_close_doubles])
-
-    # Mean energy difference
-    mean_ediff_all = np.mean(energy_diff[d_idx])
-    mean_ediff_c = np.mean(energy_diff[d_idx][c_doubles])
-    mean_ediff_w = np.mean(energy_diff[d_idx][w_doubles])
-    mean_ediff_close_c = np.mean(energy_diff[c_idx][c_close_doubles])
-    mean_ediff_close_w = np.mean(energy_diff[c_idx][w_close_doubles])
-
-    df_means = pd.DataFrame(
-        data={
-            "Separation distance [px]": [
-                mean_dist_all,
-                mean_dist_c,
-                mean_dist_w,
-                mean_dist_close_c,
-                mean_dist_close_w
-            ],
-            "Relative energy": [
-                mean_energy_all,
-                mean_energy_c,
-                mean_energy_w,
-                mean_energy_close_c,
-                mean_energy_close_w,
-            ],
-            "Energy difference": [
-                mean_ediff_all,
-                mean_ediff_c,
-                mean_ediff_w,
-                mean_ediff_close_c,
-                mean_ediff_close_w,
-            ]
-        },
-        index=[
-            "All doubles",
-            "Correct",
-            "Wrong",
-            "Correct close",
-            "Wrong close",
-        ]
-    )
-
-    return df_means
+    return df_doubles
