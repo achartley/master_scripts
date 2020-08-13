@@ -219,7 +219,7 @@ def import_real_data(path, num_samples=None):
             }
             image_idx += 1
 
-    images = np.array(images)
+    images = np.transpose(np.array(images), (1, 0, 2))
     return events, images
 
 
