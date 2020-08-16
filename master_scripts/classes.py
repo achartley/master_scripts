@@ -96,6 +96,8 @@ class Experiment:
                         self.config[major_key][k] = v
                 except AttributeError:
                     self.config[major_key] = config[major_key]
+                except KeyError:
+                    self.config[major_key] = config[major_key]
 
     def set_experiment_id(self):
         """ Creates a unique hash from the config parameters.

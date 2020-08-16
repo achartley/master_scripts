@@ -179,7 +179,7 @@ def import_data(path=None):
     return images, energies, positions, labels
 
 
-def import_real_data(path, num_samples=None):
+def import_real_data(path, num_samples=None, return_events=True):
     """ Imports experimental data as numpy arrays.
     Used together with analysis repository which has a strict folder
     structure.
@@ -221,7 +221,10 @@ def import_real_data(path, num_samples=None):
 
     images = np.array(images)
     # images = np.transpose(images, (0, 2, 1, 3))
-    return events, images
+    if return_events:
+        return events, images
+    else:
+        return images
 
 
 def separate_simulated_data(data):

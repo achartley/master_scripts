@@ -128,3 +128,70 @@ def doubles_classification_stats(positions, energies, classification,
         index=np.arange(d_idx.shape[0])
     )
     return df_doubles
+
+
+def anodedata_classification_table(experiment_id, data_name,
+                                   return_events=False):
+    """Outputs the event dict post-classification as a table
+
+    :param experiment_id:   unique id of experiment
+    :param data_name:   filename of datafile without type suffix
+                        ex. "anodedata_500k"
+    :param return_events: bool, return the events dict if True
+    """
+    # Load the event classification results
+    repo_root = get_git_root()
+    fname = repo_root + "results/events_classified_" + data_name + "_"
+    fname += experiment_id + ".json"
+    with open(fname, "r") as fp:
+        events = json.load(fp)
+
+    # Generate list of unique event descriptors present in the events
+    descriptors = list(
+        set([event['event_descriptor'] for event in events.values()])
+    )
+
+    # Frequency of each type of descriptor for each event type
+    desc_class = {
+        'single': [],
+        'double': [],
+    }
+    for event in events.values():
+        desc_class[event['event_class']].append(event['event_descriptor'])
+
+    # Translation dict for event descriptor
+    # Note that not all of these correspond to something that may exists.
+    translate_descriptor = {
+        1: "Implant",
+        2: "Decay",
+        3: "implant + Decay",
+        4: "Light ion",
+        5: "Implant + Light Ion",
+        6: "Decay + Light Ion",
+        7: "Implant + Decay + Light Ion",
+        8: "Double (time)",
+        9: "Implant + Double (time)",
+        10: "Decay + Double (time)",
+        11: "Implant + Decay + Double (time)",
+        12: "Light ion + Double (time)",
+        13: "Implant + Light Ion + Double (time)",
+        14: "Decay + Light ion + Double (time)",
+        15: "Implant + Decay + Light Ion + Double (time)",
+        16: "Double (space)",
+        17: "Implant + Double (space)",
+        18: "Decay + Double (space)"
+    }
+
+    # Print a table-like structure for viewing
+    print("Classification results for {}:".format(experiment_id))
+    print("|Event descriptor | Event type                   | singles | doubles |")
+    print("| :---            |  :---:                       | :---:   | :---:   |")
+    for d in descriptors:
+        print("|{:^17d}|{:^30s}|{:^9d}|{:^9d}|".format(
+            d,
+            translate_descriptor[d],
+            desc_class['single'].count(d),
+            desc_class['double'].count(d)))
+
+    if return_events:
+        return events
