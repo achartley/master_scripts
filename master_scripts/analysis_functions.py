@@ -96,6 +96,32 @@ def double_event_indices(prediction, d_idx, c_idx):
     return c_doubles, w_doubles, c_close_doubles, w_close_doubles
 
 
+def singles_classification_stats(positions, energies, classification):
+    """Outputs calculated separation distances, relative energies,
+    and energy differences for double events in the dataset.
+
+
+    :param positions:    event positions of interest, e.g validation positions
+    :param energies:     event energies of interest, e.g validation energies
+    :param classification:  event classification result
+
+    :return df_singles: DataFrame containing information about single events
+    """
+
+    s_idx, d_idx, c_idx = event_indices(positions)
+    df_singles = pd.DataFrame(
+        data={
+            "x_pos": positions[s_idx, 0].flatten(),
+            "y_pos": positions[s_idx, 1].flatten(),
+            "energy": energies[s_idx, 0].flatten(),
+            "classification": classification[s_idx].flatten(),
+            "indices": s_idx.flatten(),
+        },
+        index=np.arange(s_idx.shape[0])
+    )
+    return df_singles
+
+
 def doubles_classification_stats(positions, energies, classification,
                                  close_max=1.0):
     """Outputs calculated separation distances, relative energies,
