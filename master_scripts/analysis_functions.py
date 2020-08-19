@@ -123,7 +123,7 @@ def singles_classification_stats(positions, energies, classification):
 
 
 def doubles_classification_stats(positions, energies, classification,
-                                 close_max=1.0):
+                                 close_max=1.0, scale=False):
     """Outputs calculated separation distances, relative energies,
     and energy differences for double events in the dataset.
 
@@ -140,7 +140,7 @@ def doubles_classification_stats(positions, energies, classification,
     s_idx, d_idx, c_idx = event_indices(positions, close_max)
     sep_dist = separation_distance(positions[d_idx])
     energy_diff = energy_difference(energies[d_idx])
-    rel_energy = relative_energy(energies[d_idx], scale=False)
+    rel_energy = relative_energy(energies[d_idx], scale=scale)
 
     df_doubles = pd.DataFrame(
         data={

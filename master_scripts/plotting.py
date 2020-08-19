@@ -92,8 +92,7 @@ def plot_confusion_matrix(y_true, y_pred, classes, normalize=False,
 
     # Rotate the tick labels and set their alignment.
     plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
-            rotation_mode="anchor")
-
+             rotation_mode="anchor")
 
     # Loop over data dimensions and create text annotations.
     fmt = '.2f' if normalize else 'd'
@@ -109,7 +108,7 @@ def plot_confusion_matrix(y_true, y_pred, classes, normalize=False,
 
 def plot_roc_curve(y_true, y_pred):
     fpr, tpr, thresholds = roc_curve(y_true, y_pred)
-    
+
     # Get the index of the threshold closest to 0.5
     idx = np.abs(thresholds - 0.5).argmin()
 
