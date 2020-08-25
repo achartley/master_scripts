@@ -230,11 +230,13 @@ class Experiment:
         else:
             self.metrics = metrics
 
-    def save(self):
+    def save(self, save_full=False):
         """ Outputs two files:
         - one experiment config with performance metrics and optimizer
         information, fit parameters etc
         - model config, loadable with tf.keras.models.model_from_json.
+
+        :param save_full: Boolean. Save complete model with weights if true.
         """
 
         # Collect information into a dictionary
@@ -261,7 +263,15 @@ class Experiment:
         model_fpath = self.config['path_args']['model_config'] + \
             "model_" + self.id + ".json"
 
+        # Save the model with weights
+        if save_full:
+            mpath = self.config['path_args']['models'] + self.id + ".h5"
+            self.model.save(mpath)
+
+        # Save experiment
         with open(experiment_fpath, 'w') as fp:
             json.dump(output, fp, indent=2)
+
+        # Save model config
         with open(model_fpath, 'w') as fp:
             fp.write(self.model.to_json())
