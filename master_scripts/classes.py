@@ -147,7 +147,7 @@ class Experiment:
         self.history = self.model.fit(
             x=x[train_idx],
             y=y[train_idx],
-            validation_data=(x[val_idx], x[val_idx]),
+            validation_data=(x[val_idx], y[val_idx]),
             **self.config['fit_args'],
         ).history
 
