@@ -1,5 +1,6 @@
 from datetime import datetime
-from sklearn.model_selection import StratifiedKFold
+import numpy as np
+from sklearn.model_selection import StratifiedKFold, train_test_split
 from sklearn.metrics import (matthews_corrcoef, f1_score, confusion_matrix,
                              roc_auc_score, accuracy_score, r2_score,
                              mean_squared_error, mean_absolute_error)
@@ -53,6 +54,7 @@ class Experiment:
 
         self.history = None
         self.metrics = {}
+        self.indices = {}
 
         self.history_kfold = None
         self.metrics_kfold = {}
@@ -126,23 +128,43 @@ class Experiment:
         model_dir = self.config['path_args']['model_config']
         self.model = tf.keras.model_from_json(model_dir + experiment_id)
 
-    def run(self, x_train, y_train, x_val, y_val):
+    def run(self, x, y):
         """ Single training run of the given model. It is assumed that the
         input data is preprocessed, normalized, and good to go.
+
+        :param x:   input data (batch_size, width, height, channels)
+        :param y:   labels
         """
 
+        # Set indices for train and validation
+        x_idx = np.arange(x.shape[0])
+        train_idx, val_idx = train_test_split(
+            x_idx,
+            random_state=self.config['random_seed']
+        )
+
+        # Train the model
         self.history = self.model.fit(
-            x=x_train,
-            y=y_train,
-            validation_data=(x_val, y_val),
+            x=x[train_idx],
+            y=y[train_idx],
+            validation_data=(x[val_idx], x[val_idx]),
             **self.config['fit_args'],
         ).history
 
         # Calculate metrics for the model
         if self.model_type == "classification":
-            self.classification_metrics(x_val, y_val)
+            self.classification_metrics(x[val_idx], y[val_idx])
         elif self.model_type == "regression":
-            self.regression_metrics(x_val, y_val)
+            self.regression_metrics(x[val_idx], y[val_idx])
+
+        # Store indices for training and validation in config output
+        # Need conversion to list as numpy arrays aren't json serializable.
+        # To make the indices in config more uniform in format, we treat
+        # a non-kfold experiment like a 1-fold experiment.
+        self.indices['fold_0'] = {
+            'train_idx': train_idx.tolist(),
+            'val_idx': val_idx.tolist(),
+        }
 
     def run_kfold(self, x, y):
         """ Train the model using kfold cross-validation.
@@ -178,6 +200,14 @@ class Experiment:
                 self.classification_metrics(x[val_idx], y[val_idx], fold)
             elif self.model_type == "regression":
                 self.regression_metrics(x[val_idx], y[val_idx], fold)
+
+            # Store train and val indices for the fold
+            foldkey = 'fold_' + str(fold)
+            self.indices[foldkey] = {
+                'train_idx': train_idx.tolist(),
+                'val_idx': val_idx.tolist(),
+            }
+
             fold += 1
         self.history_kfold = results
 
@@ -194,7 +224,8 @@ class Experiment:
         metrics['rmse'] = mean_squared_error(y_val, y_pred, squared=False)
         metrics['mae'] = mean_absolute_error(y_val, y_pred)
         if fold:
-            self.metrics_kfold[fold] = metrics
+            foldkey = 'fold_' + str(fold)
+            self.metrics_kfold[foldkey] = metrics
         else:
             self.metrics = metrics
 
@@ -226,7 +257,8 @@ class Experiment:
         metrics['roc_auc_score'] = roc_auc_score(y_val, y_out)
 
         if fold:
-            self.metrics_kfold[fold] = metrics
+            foldkey = 'fold_' + str(fold)
+            self.metrics_kfold[foldkey] = metrics
         else:
             self.metrics = metrics
 
@@ -247,6 +279,7 @@ class Experiment:
         output['model_type'] = self.model_type
         output['experiment_name'] = self.experiment_name
         output['experiment_id'] = self.id
+        output['indices'] = self.indices
         output['datetime'] = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
 
         if self.history_kfold:
