@@ -303,7 +303,7 @@ class Experiment:
 
         # Save experiment
         with open(experiment_fpath, 'w') as fp:
-            json.dump(output, fp, indent=2)
+            json.dump(output, fp)
 
         # Save model config
         with open(model_fpath, 'w') as fp:
