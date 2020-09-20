@@ -299,6 +299,18 @@ def normalize_image_data(images):
     return images
 
 
+def normalize_image_data_elementwise(images):
+    """ Takes an imported set of images and normalizes values to between
+    0 and 1 using min-max scaling on each image
+    """
+    img_max = np.amax(images.reshape(images.shape[0], 256), axis=1)
+    img_min = np.amin(images.reshape(images.shape[0], 256), axis=1)
+    term_top = images - img_min.reshape(images.shape[0], 1, 1, 1)
+    term_bottom = (img_max - img_min).reshape(images.shape[0], 1, 1, 1)
+    images = term_top / term_bottom
+    return images
+
+
 def normalize_position_data(positions):
     """ Takes an imported set of positions and normalizes values to between
     0 and 1 simply dividing by 16.
