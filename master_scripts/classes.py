@@ -498,4 +498,4 @@ class DSNT(tf.keras.layers.Layer):
         # Zip into [x, y] pairs
         coords_zipped = tf.stack([outputs_x, outputs_y], axis=1)
 
-        return norm_heatmap, coords_zipped
+        return [norm_heatmap, coords_zipped]
