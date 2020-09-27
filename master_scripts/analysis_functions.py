@@ -244,9 +244,11 @@ def dsnt_mse(y_true, y_pred):
     Returns:
       Mean squared error values. shape = `[batch_size, d0, .. dN-1]`.
     """
-    print(y_true.shape)
-    print(y_pred.shape)
+    print("True, pre convert", y_true.shape)
+    print("Pred, pre convert", y_pred.shape)
     y_pred = ops.convert_to_tensor_v2(y_pred[1])
+    print("Pred, post convert", y_pred.shape)
     y_true = math_ops.cast(y_true, y_pred.dtype)
+    print("True, post convert", y_true.shape)
     exit(1)
     return K.mean(math_ops.squared_difference(y_pred, y_true), axis=-1)
