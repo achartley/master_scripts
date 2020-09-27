@@ -246,7 +246,7 @@ def dsnt_mse(y_true, y_pred):
     """
     print("True, pre convert", y_true.shape)
     print("Pred, pre convert", y_pred.shape)
-    y_pred = ops.convert_to_tensor_v2(y_pred[1])
+    y_pred = ops.convert_to_tensor_v2(y_pred)
     print("Pred, post convert", y_pred.shape)
     y_true = math_ops.cast(y_true, y_pred.dtype)
     print("True, post convert", y_true.shape)
