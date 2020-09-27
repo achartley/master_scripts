@@ -248,5 +248,5 @@ def dsnt_mse(y_true, y_pred):
     print(y_pred.shape)
     y_pred = ops.convert_to_tensor_v2(y_pred[1])
     y_true = math_ops.cast(y_true, y_pred.dtype)
-    break
+    exit(1)
     return K.mean(math_ops.squared_difference(y_pred, y_true), axis=-1)
