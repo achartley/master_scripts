@@ -330,7 +330,7 @@ class DSNT(tf.keras.layers.Layer):
             inputs - The learnt heatmap. A 3d tensor of shape
                     [batch, height, width]
             method - A string representing the normalisation method.
-                    See `_normalise_heatmap` for available methods
+                    See `normalise_heatmap` for available methods
         Returns:
             norm_heatmap - The given heatmap with normalisation/rectification
                         applied
@@ -338,7 +338,7 @@ class DSNT(tf.keras.layers.Layer):
                         coordinate pairs
         '''
         # Rectify and reshape inputs
-        norm_heatmap = _normalise_heatmap(inputs, method)
+        norm_heatmap = normalise_heatmap(inputs, method)
 
         batch_count = tf.shape(norm_heatmap)[0]
         height = tf.shape(norm_heatmap)[1]
@@ -377,12 +377,12 @@ class DSNT(tf.keras.layers.Layer):
             fwhm - Full-width-half-maximum for the drawn Gaussians, which can
             be thought of as a radius.
         '''
-        gauss = _make_gaussians(centres, tf.shape(
+        gauss = make_gaussians(centres, tf.shape(
             heatmaps)[1], tf.shape(heatmaps)[2], fwhm)
         divergences = _js_2d(heatmaps, gauss)
         return tf.reduce_mean(divergences)
 
-    def _normalise_heatmap(inputs, method='softmax'):
+    def normalise_heatmap(inputs, method='softmax'):
         '''
         Applies the chosen normalisation/rectification method to the input
         tensor
@@ -438,7 +438,7 @@ class DSNT(tf.keras.layers.Layer):
         softmax = target_exp / normalize
         return softmax
 
-    def _make_gaussian(size, centre, fwhm=1):
+    def make_gaussian(size, centre, fwhm=1):
         '''
         Makes a rectangular gaussian kernel.
         Arguments:
@@ -462,7 +462,7 @@ class DSNT(tf.keras.layers.Layer):
         norm = unnorm / tf.reduce_sum(unnorm)
         return norm
 
-    def _make_gaussians(centres_in, height, width, fwhm=1):
+    def make_gaussians(centres_in, height, width, fwhm=1):
         '''
         Makes a batch of gaussians. Size of images designated by
         height, width; number of images designated by length of the 1st
@@ -481,7 +481,7 @@ class DSNT(tf.keras.layers.Layer):
         def body(centres, heatmaps):
             curr = centres[0]
             centres = centres[1:]
-            new_heatmap = _make_gaussian([height, width], curr, fwhm)
+            new_heatmap = make_gaussian([height, width], curr, fwhm)
             new_heatmap = tf.reshape(new_heatmap, [-1])
 
             heatmaps = tf.concat([heatmaps, new_heatmap], 0)
