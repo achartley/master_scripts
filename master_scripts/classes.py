@@ -337,35 +337,6 @@ class DSNT(tf.keras.layers.Layer):
             coords_zipped - A tensor of shape [batch, 2] containing the [x, y]
                         coordinate pairs
         '''
-        # Rectify and reshape inputs
-        norm_heatmap = normalise_heatmap(inputs, method)
-
-        batch_count = tf.shape(norm_heatmap)[0]
-        height = tf.shape(norm_heatmap)[1]
-        width = tf.shape(norm_heatmap)[2]
-
-        # Build the DSNT x, y matrices
-        dsnt_x = tf.tile(
-            [[(2 * tf.range(1, width + 1) - (width + 1)) / width]],
-            [batch_count, height, 1]
-        )
-        dsnt_x = tf.cast(dsnt_x, tf.float32)
-        dsnt_y = tf.tile(
-            [[(2 * tf.range(1, height + 1) - (height + 1)) / height]],
-            [batch_count, width, 1]
-        )
-        dsnt_y = tf.cast(tf.transpose(dsnt_y, perm=[0, 2, 1]), tf.float32)
-
-        # Compute the Frobenius inner product
-        outputs_x = tf.reduce_sum(tf.multiply(
-            norm_heatmap, dsnt_x), axis=[1, 2])
-        outputs_y = tf.reduce_sum(tf.multiply(
-            norm_heatmap, dsnt_y), axis=[1, 2])
-
-        # Zip into [x, y] pairs
-        coords_zipped = tf.stack([outputs_x, outputs_y], axis=1)
-
-        return norm_heatmap, coords_zipped
 
         def js_reg_loss(heatmaps, centres, fwhm=1):
             '''
@@ -498,3 +469,33 @@ class DSNT(tf.keras.layers.Layer):
             )
             heatmaps_out = tf.reshape(heatmaps_out, [-1, height, width])
             return heatmaps_out
+
+        # Rectify and reshape inputs
+        norm_heatmap = normalise_heatmap(inputs, method)
+
+        batch_count = tf.shape(norm_heatmap)[0]
+        height = tf.shape(norm_heatmap)[1]
+        width = tf.shape(norm_heatmap)[2]
+
+        # Build the DSNT x, y matrices
+        dsnt_x = tf.tile(
+            [[(2 * tf.range(1, width + 1) - (width + 1)) / width]],
+            [batch_count, height, 1]
+        )
+        dsnt_x = tf.cast(dsnt_x, tf.float32)
+        dsnt_y = tf.tile(
+            [[(2 * tf.range(1, height + 1) - (height + 1)) / height]],
+            [batch_count, width, 1]
+        )
+        dsnt_y = tf.cast(tf.transpose(dsnt_y, perm=[0, 2, 1]), tf.float32)
+
+        # Compute the Frobenius inner product
+        outputs_x = tf.reduce_sum(tf.multiply(
+            norm_heatmap, dsnt_x), axis=[1, 2])
+        outputs_y = tf.reduce_sum(tf.multiply(
+            norm_heatmap, dsnt_y), axis=[1, 2])
+
+        # Zip into [x, y] pairs
+        coords_zipped = tf.stack([outputs_x, outputs_y], axis=1)
+
+        return norm_heatmap, coords_zipped
