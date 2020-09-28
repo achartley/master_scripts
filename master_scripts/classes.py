@@ -471,6 +471,9 @@ class DSNT(tf.keras.layers.Layer):
             heatmaps_out = tf.reshape(heatmaps_out, [-1, height, width])
             return heatmaps_out
 
+        def get_config(self):
+            return {}
+
         # Rectify and reshape inputs
         norm_heatmap = normalise_heatmap(inputs, method)
 
