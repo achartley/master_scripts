@@ -1,6 +1,7 @@
 import numpy as np
 import json
 import pandas as pd
+from master_scripts.classes import DSNT
 from master_scripts.data_functions import (get_git_root, relative_energy,
                                            separation_distance,
                                            energy_difference,
