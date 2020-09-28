@@ -365,7 +365,7 @@ class DSNT(tf.keras.layers.Layer):
             # Remove the final dimension as it's of size 1
             inputs = tf.reshape(inputs, tf.shape(inputs)[:3])
 
-            # Normalise the values such that the values sum to one for each heatmap
+            # Normalise values so the values sum to one for each heatmap
             def normalise(x): return tf.div(
                 x, tf.reshape(tf.reduce_sum(x, [1, 2]), [-1, 1, 1]))
 
