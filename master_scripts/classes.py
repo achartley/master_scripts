@@ -319,8 +319,8 @@ class DSNT(tf.keras.layers.Layer):
     Original implementation: https://github.com/ashwhall/dsnt
     """
 
-    def __init__(self):
-        super(DSNT, self).__init__()
+    def __init__(self, name=None, **kwargs):
+        super(DSNT, self).__init__(name=name, **kwargs)
 
     def call(self, inputs, method="softmax"):
         '''
@@ -472,7 +472,8 @@ class DSNT(tf.keras.layers.Layer):
             return heatmaps_out
 
         def get_config(self):
-            return {}
+            config = super(DSNT, self).get_config()
+            return config
 
         # Rectify and reshape inputs
         norm_heatmap = normalise_heatmap(inputs, method)
