@@ -319,8 +319,8 @@ class DSNT(tf.keras.layers.Layer):
     Original implementation: https://github.com/ashwhall/dsnt
     """
 
-    def __init__(self):
-        super(DSNT, self).__init__()
+    def __init__(self, name=None, **kwargs):
+        super(DSNT, self).__init__(name=name, **kwargs)
 
     def call(self, inputs, method="softmax"):
         '''
@@ -365,7 +365,7 @@ class DSNT(tf.keras.layers.Layer):
             # Remove the final dimension as it's of size 1
             inputs = tf.reshape(inputs, tf.shape(inputs)[:3])
 
-            # Normalise the values such that the values sum to one for each heatmap
+            # Normalise values so the values sum to one for each heatmap
             def normalise(x): return tf.div(
                 x, tf.reshape(tf.reduce_sum(x, [1, 2]), [-1, 1, 1]))
 
@@ -428,8 +428,9 @@ class DSNT(tf.keras.layers.Layer):
             y = x[:, tf.newaxis]
             x0 = centre[0] - 0.5
             y0 = centre[1] - 0.5
-            unnorm = tf.exp(-4 * tf.log(2.) * ((x - x0)**2 + (y - y0)
-                                               ** 2) / fwhm**2)[:size[0], :size[1]]
+            unnorm = tf.exp(
+                -4 * tf.log(2.) * ((x - x0)**2 + (y - y0) ** 2) / fwhm**2
+            )[:size[0], :size[1]]
             norm = unnorm / tf.reduce_sum(unnorm)
             return norm
 
@@ -439,8 +440,8 @@ class DSNT(tf.keras.layers.Layer):
             height, width; number of images designated by length of the 1st
             dimension of centres_in
             Arguments:
-                centres_in  - The normalised coordinate centres of the gaussians
-                                of shape [batch, x, y]
+                centres_in  - The normalised coordinate centres of the
+                                gaussians of shape [batch, x, y]
                 height  - The desired height of the produced gaussian image
                 width   - The desired width of the produced gaussian image
                 fwhm    - Full-width-half-maximum, which can be thought of as
@@ -470,6 +471,10 @@ class DSNT(tf.keras.layers.Layer):
             heatmaps_out = tf.reshape(heatmaps_out, [-1, height, width])
             return heatmaps_out
 
+        def get_config(self):
+            config = super(DSNT, self).get_config()
+            return config
+
         # Rectify and reshape inputs
         norm_heatmap = normalise_heatmap(inputs, method)
 
@@ -498,4 +503,4 @@ class DSNT(tf.keras.layers.Layer):
         # Zip into [x, y] pairs
         coords_zipped = tf.stack([outputs_x, outputs_y], axis=1)
 
-        return [norm_heatmap, coords_zipped]
+        return norm_heatmap, coords_zipped
