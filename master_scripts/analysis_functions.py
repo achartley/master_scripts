@@ -158,6 +158,67 @@ def doubles_classification_stats(positions, energies, classification,
     )
     return df_doubles
 
+def anodedata_classification(events, classification):
+    """Adds class labels to events
+
+    :param events:   event dict for data
+    :param classification: classification prediction as 0's and 1's
+
+    :returns events: The modified events dict
+    """
+    # Load the event classification results
+
+    # Generate list of unique event descriptors present in the events
+    descriptors = list(
+        set([event['event_descriptor'] for event in events.values()])
+    )
+
+    for event_id in events.keys():
+        if classification[events[event_id]['image_idx']] == 0:
+            events[event_id]['event_class'] = "single"
+        else:
+            events[event_id]['event_class'] = "double"
+    # Frequency of each type of descriptor for each event type
+    desc_class = {
+        'single': [],
+        'double': [],
+    }
+    for event in events.values():
+        desc_class[event['event_class']].append(event['event_descriptor'])
+
+    # Translation dict for event descriptor
+    # Note that not all of these correspond to something that may exists.
+    translate_descriptor = {
+        1: "Implant",
+        2: "Decay",
+        3: "implant + Decay",
+        4: "Light ion",
+        5: "Implant + Light Ion",
+        6: "Decay + Light Ion",
+        7: "Implant + Decay + Light Ion",
+        8: "Double (time)",
+        9: "Implant + Double (time)",
+        10: "Decay + Double (time)",
+        11: "Implant + Decay + Double (time)",
+        12: "Light ion + Double (time)",
+        13: "Implant + Light Ion + Double (time)",
+        14: "Decay + Light ion + Double (time)",
+        15: "Implant + Decay + Light Ion + Double (time)",
+        16: "Double (space)",
+        17: "Implant + Double (space)",
+        18: "Decay + Double (space)"
+    }
+
+    desc_overview = {}
+    for d in descriptors:
+        desc_overview[translate_descriptor[d]] = {
+            'single': desc_class['single'].count(d),
+            'double': desc_class['double'].count(d),
+        }
+    for k, v in desc_overview.items():
+        print(f"{k}: predicted {v['single']} singles, {v['double']} doubles.")
+
+    return events
 
 def anodedata_classification_table(experiment_id, data_name,
                                    return_events=False):
