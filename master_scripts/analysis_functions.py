@@ -219,8 +219,8 @@ def anodedata_classification(events, classification):
     for k, v in desc_overview.items():
         print(
             "{:^17d}|{:^30s}|{:^9d}|{:^9d}|".format(
-                d,
-                translate_descriptor[d],
+                k,
+                translate_descriptor[k],
                 v['single'],
                 v['double'],
             )
