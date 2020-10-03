@@ -217,7 +217,14 @@ def anodedata_classification(events, classification):
             'double': desc_class['double'].count(d),
         }
     for k, v in desc_overview.items():
-        print(f"{k}: predicted {v['single']} singles, {v['double']} doubles.")
+        print(
+            "{:^17d}|{:^30s}|{:^9d}|{:^9d}|".format(
+                d,
+                translate_descriptor[d],
+                v['single'],
+                v['double'],
+            )
+        )
 
     return events
 
