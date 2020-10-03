@@ -4,7 +4,7 @@ from sklearn.model_selection import StratifiedKFold, train_test_split
 from sklearn.metrics import (matthews_corrcoef, f1_score, confusion_matrix,
                              roc_auc_score, accuracy_score, r2_score,
                              mean_squared_error, mean_absolute_error)
-from master_scripts.data_functions import get_git_root
+from master_scripts.data_functions import get_git_root, normalize_image_data
 import tensorflow as tf
 import json
 import warnings
@@ -145,9 +145,12 @@ class Experiment:
 
         # Train the model
         self.history = self.model.fit(
-            x=x[train_idx],
-            y=y[train_idx],
-            validation_data=(x[val_idx], y[val_idx]),
+            x=normalize_image_data(x[train_idx]),
+            y=normalize_image_data(y[train_idx]),
+            validation_data=(
+                normalize_image_data(x[val_idx]),
+                normalize_image_data(y[val_idx])
+            ),
             **self.config['fit_args'],
         ).history
 
