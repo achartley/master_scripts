@@ -265,13 +265,14 @@ class Experiment:
         else:
             self.metrics = metrics
 
-    def save(self, save_full=False):
+    def save(self, save_model=False, save_indices=False):
         """ Outputs two files:
         - one experiment config with performance metrics and optimizer
         information, fit parameters etc
         - model config, loadable with tf.keras.models.model_from_json.
 
-        :param save_full: Boolean. Save complete model with weights if true.
+        :param save_model: Boolean. Save complete model with weights if true.
+        :param save_indices: Boolean. Save indices to file if True.
         """
 
         # Collect information into a dictionary
@@ -282,7 +283,6 @@ class Experiment:
         output['model_type'] = self.model_type
         output['experiment_name'] = self.experiment_name
         output['experiment_id'] = self.id
-        output['indices'] = self.indices
         output['datetime'] = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
 
         if self.history_kfold:
@@ -299,8 +299,10 @@ class Experiment:
         model_fpath = self.config['path_args']['model_config'] + \
             "model_" + self.id + ".json"
 
+        if save_indices:
+            output['indices'] = self.indices
         # Save the model with weights
-        if save_full:
+        if save_model:
             mpath = self.config['path_args']['models'] + self.id + ".h5"
             self.model.save(mpath)
 
