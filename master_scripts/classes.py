@@ -171,6 +171,11 @@ class Experiment:
 
     def run_kfold(self, x, y):
         """ Train the model using kfold cross-validation.
+        It is assumed that the input data is preprocessed, normalized,
+        and good to go.
+
+        :param x:   input data (batch_size, width, height, channels)
+        :param y:   labels / targets
         """
 
         # StratifiedKFold doesn't take one-hot
@@ -188,6 +193,7 @@ class Experiment:
         # Run k-fold cross-validation
         fold = 0  # Track which fold
         for train_idx, val_idx in skf.split(x, y):
+            print("y_val unique:", y[val_idx].unique())
 
             # Train model
             history = self.model.fit(
