@@ -224,9 +224,9 @@ class Experiment:
         """
 
         # Get prediction and make class labels based on threshold of 0.5
-        y_pred = self.model.predict(normalize_image_data(x_val))
-        metrics = {}
+        y_pred = self.model.predict(x_val)
 
+        metrics = {}
         metrics['r2_score'] = r2_score(y_val, y_pred)
         metrics['mse'] = mean_squared_error(y_val, y_pred)
         metrics['rmse'] = mean_squared_error(y_val, y_pred, squared=False)
@@ -247,12 +247,11 @@ class Experiment:
         """
 
         # Get prediction and make class labels based on threshold of 0.5
-        y_out = self.model.predict(normalize_image_data(x_val))
+        y_out = self.model.predict(x_val)
         y_pred = y_out > 0.5
-        metrics = {}
         confmat = confusion_matrix(y_val, y_pred)
-        print(confmat)
 
+        metrics = {}
         metrics['accuracy_score'] = accuracy_score(y_val, y_pred)
         metrics['confusion_matrix'] = {
             'TN': int(confmat[0, 0]),
