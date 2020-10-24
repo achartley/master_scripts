@@ -50,6 +50,32 @@ def load_experiment(e_id):
     return e
 
 
+def experiment_metrics_to_df(experiment):
+    """Extract the metrics included in an experiment and return as a
+    dataframe.
+
+    :param experiment: Dict, loaded experiment file.
+    :returns metrics: DataFrame object containing the metrics.
+    """
+
+    confmats = {}
+    for fold in experiment['metrics'].keys():
+        confmats[fold] = experiment['metrics'][fold]['confusion_matrix']
+    confmats = pd.DataFrame.from_dict(
+        data=confmats,
+        orient='index',
+    )
+    metrics = pd.DataFrame.from_dict(
+        data=experiment['metrics'],
+        orient='index',
+        columns=['accuracy_score', 'f1_score',
+                 'matthews_corrcoef', 'roc_auc_score']
+    )
+
+    metrics = pd.concat([metrics, confmats], axis=1)
+    return metrics
+
+
 def load_hparam_search(name):
     """ Reads json-formatted hparam search file spec to pandas DF,
     and loads additional metrics into the dataframe.
@@ -159,6 +185,7 @@ def doubles_classification_stats(positions, energies, classification,
     )
     return df_doubles
 
+
 def anodedata_classification(events, classification):
     """Adds class labels to events
 
@@ -226,6 +253,7 @@ def anodedata_classification(events, classification):
         )
 
     return events
+
 
 def anodedata_classification_table(experiment_id, data_name,
                                    return_events=False):
