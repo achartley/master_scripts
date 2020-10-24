@@ -232,7 +232,7 @@ class Experiment:
         metrics['mse'] = mean_squared_error(y_val, y_pred)
         metrics['rmse'] = mean_squared_error(y_val, y_pred, squared=False)
         metrics['mae'] = mean_absolute_error(y_val, y_pred)
-        if fold:
+        if fold is not None:
             foldkey = 'fold_' + str(fold)
             self.metrics_kfold[foldkey] = metrics
         else:
@@ -264,7 +264,7 @@ class Experiment:
         metrics['matthews_corrcoef'] = matthews_corrcoef(y_val, y_pred)
         metrics['roc_auc_score'] = roc_auc_score(y_val, y_out)
 
-        if fold:
+        if fold is not None:
             foldkey = 'fold_' + str(fold)
             self.metrics_kfold[foldkey] = metrics
         else:
