@@ -189,13 +189,10 @@ class Experiment:
             random_state=self.config['random_seed'],
             **self.config['kfold_args']
         )
-        print("SKF:")
-        print(skf)
 
         # Run k-fold cross-validation
         fold = 0  # Track which fold
         for train_idx, val_idx in skf.split(x, y):
-            print("y_val unique:", np.unique(y[val_idx], return_counts=True))
 
             # Train model
             history = self.model.fit(
@@ -203,7 +200,7 @@ class Experiment:
                 y[train_idx],
                 validation_data=(x[val_idx], y[val_idx]),
                 ** self.config['fit_args'],
-            )
+            ).history
             # Calculate metrics for the model
             if self.model_type == "classification":
                 self.classification_metrics(x[val_idx], y[val_idx], fold)
