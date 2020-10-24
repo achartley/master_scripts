@@ -209,6 +209,7 @@ class Experiment:
 
             # Store train and val indices for the fold
             foldkey = 'fold_' + str(fold)
+            print("Now in fold: ", foldkey)
             self.indices[foldkey] = {
                 'train_idx': train_idx.tolist(),
                 'val_idx': val_idx.tolist(),
