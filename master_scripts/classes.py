@@ -179,7 +179,7 @@ class Experiment:
         """
 
         # StratifiedKFold doesn't take one-hot
-        y = y.argmax(axis=-1)
+        # y = y.argmax(axis=-1)
 
         # Store accuracy for each fold for all models
         results = {}
@@ -189,6 +189,8 @@ class Experiment:
             random_state=self.config['random_seed'],
             **self.config['kfold_args']
         )
+        print("SKF:")
+        print(skf)
 
         # Run k-fold cross-validation
         fold = 0  # Track which fold
