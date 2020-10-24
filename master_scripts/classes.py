@@ -193,7 +193,7 @@ class Experiment:
         # Run k-fold cross-validation
         fold = 0  # Track which fold
         for train_idx, val_idx in skf.split(x, y):
-            print("y_val unique:", y[val_idx].unique())
+            print("y_val unique:", np.unique(y[val_idx], return_counts=True))
 
             # Train model
             history = self.model.fit(
