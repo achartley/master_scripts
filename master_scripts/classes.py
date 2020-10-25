@@ -313,7 +313,10 @@ class Experiment:
 
         # Save experiment
         with open(experiment_fpath, 'w') as fp:
-            json.dump(output, fp)
+            if save_indices:
+                json.dump(output, fp)
+            else:
+                json.dump(output, fp, indent=2)
 
         # Save model config
         with open(model_fpath, 'w') as fp:
