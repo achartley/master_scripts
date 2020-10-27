@@ -1,7 +1,7 @@
 from importlib import import_module
 from tensorflow.keras import Input
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Flatten
+from tensorflow.keras.layers import Flatten, Dense
 
 
 def pretrained_model(which_model="VGG16", input_dim=(16, 16, 3),
@@ -99,6 +99,7 @@ def pretrained_vgg16(input_dim=(16, 16, 3)):
 
     # Load the actual function which lets us create a new instance of a model
     pretrained = getattr(module, "VGG16")(include_top=True, weights='imagenet')
+    print(pretrained.summary())
 
     # Create new input layer
     input_layer = Input(shape=input_dim)
@@ -116,6 +117,12 @@ def pretrained_vgg16(input_dim=(16, 16, 3)):
             # Break if sequential model doesn't support the layer.
             print("ValueError:", err)
             break
+
+    # Add fully connected layers
+    model.add(Flatten())
+    model.add(Dense(4096, activation='relu'))
+    model.add(Dense(4096, activation='relu'))
+    model.add(Dense(1, activation='sigmoid'))
 
     return model
 
@@ -156,4 +163,4 @@ def pretrained_resnet50(input_dim=(16, 16, 3)):
 
 
 if __name__ == "__main__":
-    pretrained_model("DenseNet121")
+    pretrained_vgg16()
