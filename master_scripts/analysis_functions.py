@@ -64,6 +64,7 @@ def experiment_metrics_to_df(experiment):
     confmats = pd.DataFrame.from_dict(
         data=confmats,
         orient='index',
+        dtype=np.int32,
     )
     metrics = pd.DataFrame.from_dict(
         data=experiment['metrics'],
