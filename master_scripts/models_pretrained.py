@@ -106,7 +106,7 @@ def pretrained_vgg16(input_dim=(16, 16, 3)):
     # Add input layer and all pretrained layers except final softmax layer
     model = Sequential()
     model.add(input_layer)
-    for i in range(0, len(pretrained.layers) - 1):
+    for i in range(1, len(pretrained.layers)):
         try:
             model.add(pretrained.layers[i])
         except IndexError:
