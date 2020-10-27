@@ -99,7 +99,6 @@ def pretrained_vgg16(input_dim=(16, 16, 3)):
 
     # Load the actual function which lets us create a new instance of a model
     pretrained = getattr(module, "VGG16")(include_top=True, weights='imagenet')
-    print(pretrained.summary())
 
     # Create new input layer
     input_layer = Input(shape=input_dim)
