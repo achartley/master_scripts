@@ -76,7 +76,8 @@ def pretrained_model(which_model="VGG16", input_dim=(16, 16, 3),
                 break
             except ValueError:
                 # Break if sequential model doesn't support the layer.
-                print("ValueError met, breaking the layer addition loop")
+                print("Maximum number of pretrained layers added, \
+                      breaking the layer addition loop")
                 break
 
     # Set layers to non-trainable
