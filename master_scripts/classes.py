@@ -196,9 +196,12 @@ class Experiment:
 
             # Train model
             history = self.model.fit(
-                x[train_idx],
-                y[train_idx],
-                validation_data=(x[val_idx], y[val_idx]),
+                x=normalize_image_data(x[train_idx]),
+                y=normalize_image_data(y[train_idx]),
+                validation_data=(
+                    normalize_image_data(x[val_idx]),
+                    normalize_image_data(y[val_idx])
+                ),
                 ** self.config['fit_args'],
             ).history
             # Calculate metrics for the model
@@ -248,7 +251,7 @@ class Experiment:
         """
 
         # Get prediction and make class labels based on threshold of 0.5
-        y_out = self.model.predict(x_val)
+        y_out = self.model.predict(normalize_image_data(x_val))
         y_pred = y_out > 0.5
         confmat = confusion_matrix(y_val, y_pred)
 
