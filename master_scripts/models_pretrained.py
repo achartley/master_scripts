@@ -119,9 +119,10 @@ def pretrained_vgg16(input_dim=(16, 16, 3)):
 
     # Add fully connected layers
     model.add(Flatten())
-    model.add(Dense(4096, activation='relu'))
-    model.add(Dense(4096, activation='relu'))
+    model.add(Dense(256, activation='relu'))
+    model.add(Dense(256, activation='relu'))
     model.add(Dense(1, activation='sigmoid'))
+    print(model.summary())
 
     return model
 
