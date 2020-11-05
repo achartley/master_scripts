@@ -1,6 +1,6 @@
 from datetime import datetime
 import numpy as np
-from sklearn.model_selection import StratifiedKFold, train_test_split
+from sklearn.model_selection import StratifiedKFold, train_test_split, KFold
 from sklearn.metrics import (matthews_corrcoef, f1_score, confusion_matrix,
                              roc_auc_score, accuracy_score, r2_score,
                              mean_squared_error, mean_absolute_error)
@@ -178,21 +178,18 @@ class Experiment:
         :param y:   labels / targets
         """
 
-        # StratifiedKFold doesn't take one-hot
-        # y = y.argmax(axis=-1)
-
         # Store accuracy for each fold for all models
         results = {}
 
         # Create KFold data generator
-        skf = StratifiedKFold(
+        kf = KFold(
             random_state=self.config['random_seed'],
             **self.config['kfold_args']
         )
 
         # Run k-fold cross-validation
         fold = 0  # Track which fold
-        for train_idx, val_idx in skf.split(x, y):
+        for train_idx, val_idx in kf.split(x, y):
 
             # Train model
             history = self.model.fit(
