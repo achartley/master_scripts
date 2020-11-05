@@ -1,6 +1,6 @@
 from datetime import datetime
 import numpy as np
-from sklearn.model_selection import StratifiedKFold, train_test_split, KFold
+from sklearn.model_selection import train_test_split, KFold
 from sklearn.metrics import (matthews_corrcoef, f1_score, confusion_matrix,
                              roc_auc_score, accuracy_score, r2_score,
                              mean_squared_error, mean_absolute_error)
@@ -146,10 +146,10 @@ class Experiment:
         # Train the model
         self.history = self.model.fit(
             x=normalize_image_data(x[train_idx]),
-            y=normalize_image_data(y[train_idx]),
+            y=y[train_idx],
             validation_data=(
                 normalize_image_data(x[val_idx]),
-                normalize_image_data(y[val_idx])
+                y[val_idx]
             ),
             **self.config['fit_args'],
         ).history
