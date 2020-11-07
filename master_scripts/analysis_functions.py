@@ -58,22 +58,31 @@ def experiment_metrics_to_df(experiment):
     :returns metrics: DataFrame object containing the metrics.
     """
 
-    confmats = {}
-    for fold in experiment['metrics'].keys():
-        confmats[fold] = experiment['metrics'][fold]['confusion_matrix']
-    confmats = pd.DataFrame.from_dict(
-        data=confmats,
-        orient='index',
-        dtype=np.int32,
-    )
-    metrics = pd.DataFrame.from_dict(
-        data=experiment['metrics'],
-        orient='index',
-        columns=['accuracy_score', 'f1_score',
-                 'matthews_corrcoef', 'roc_auc_score']
-    )
+    if 'classification' in experiment['model_type']:
+        # Classification metrics
+        confmats = {}
+        for fold in experiment['metrics'].keys():
+            confmats[fold] = experiment['metrics'][fold]['confusion_matrix']
+        confmats = pd.DataFrame.from_dict(
+            data=confmats,
+            orient='index',
+            dtype=np.int32,
+        )
+        metrics = pd.DataFrame.from_dict(
+            data=experiment['metrics'],
+            orient='index',
+            columns=['accuracy_score', 'f1_score',
+                     'matthews_corrcoef', 'roc_auc_score']
+        )
 
-    metrics = pd.concat([metrics, confmats], axis=1)
+        metrics = pd.concat([metrics, confmats], axis=1)
+    else:
+        # Regression metrics
+        metrics = pd.DataFrame.from_dict(
+            data=experiment['metrics'],
+            orient='index',
+        )
+
     return metrics
 
 

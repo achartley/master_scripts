@@ -171,7 +171,7 @@ class Experiment:
 
     def run_kfold(self, x, y):
         """ Train the model using kfold cross-validation.
-        It is assumed that the input data is preprocessed, normalized,
+        It is assumed that the input data is preprocessed,
         and good to go.
 
         :param x:   input data (batch_size, width, height, channels)
@@ -190,7 +190,6 @@ class Experiment:
         # Run k-fold cross-validation
         fold = 0  # Track which fold
         for train_idx, val_idx in kf.split(x, y):
-
             # Train model
             history = self.model.fit(
                 x=normalize_image_data(x[train_idx]),
@@ -209,7 +208,6 @@ class Experiment:
 
             # Store train and val indices for the fold
             foldkey = 'fold_' + str(fold)
-            print("Now in fold: ", foldkey)
             self.indices[foldkey] = {
                 'train_idx': train_idx.tolist(),
                 'val_idx': val_idx.tolist(),
@@ -225,7 +223,7 @@ class Experiment:
         """
 
         # Get prediction and make class labels based on threshold of 0.5
-        y_pred = self.model.predict(x_val)
+        y_pred = self.model.predict(normalize_image_data(x_val))
 
         metrics = {}
         metrics['r2_score'] = r2_score(y_val, y_pred)
