@@ -67,63 +67,22 @@ def get_tf_device(MAX_LOAD):
     return DEVICE
 
 
-def generate_dataset(path=None, num_samples=None):
-    """ Take a large datafile and output a smaller file
-    containing a balanced dataset of num_samples samples.
+def generate_simulated_dataset(path, num_samples=None, random_seed=None,
+                               ratio=None):
+    """Generate numpy-format dataset from a scintillator datafile.
+
+    Keyword arguments:
+    path -- full path to scintillator datafile
+    num_samples -- number of samples. If None, use the whole file.
+    random_seed -- set random seed for reproducibility
+    ratio -- ratio of n_test_samples/n_training_samples. E.g 0.1 splits
+             off 10% of the data as test data.
     """
 
-    labels = []
-    lines = []
-
-    # read line by line to alleviate memory strain when files are large
-    with open(path, "r") as infile:
-        for line in infile:
-            lines.append(line)
-            tmp = np.fromstring(line, sep=' ')
-            label = 0 if tmp[259] == 0 else 1
-            labels.append(label)
-
-    labels = np.array(labels)
-    # Pick a num_samples randomly selected samples such that the returned
-    # dataset contains a balanced number of single and double events.
-
-    # Convert to int so number can be provided on scientific form ex. 1e5
-    num_samples = int(num_samples)
-
-    # Get separate indices for single and double events based on labels
-    single_indices = np.array(np.where(labels == 0)[0])
-    double_indices = np.array(np.where(labels == 1)[0])
-
-    # Handle cases where number of samples is not an even number
-    if num_samples % 2 != 0:
-        num_double = num_samples // 2
-        num_single = num_double + 1
-    else:
-        num_single = num_double = num_samples // 2
-
-    # Handle cases where dataset contains fewer than num_samples/2 of
-    # an event type
-    if len(single_indices) < num_single:
-        num_single = len(single_indices)
-    if len(double_indices) < num_double:
-        num_double = len(double_indices)
-
-    # Draw random indices single and double indices
-    single_out = np.random.choice(
-        single_indices, size=num_single, replace=False)
-    double_out = np.random.choice(
-        double_indices, size=num_double, replace=False)
-
-    # Write selected samples to file
-    filename = "generated_dataset_" + str(num_samples) + ".txt"
-    with open(filename, "w") as outfile:
-        for idx in single_out:
-            outfile.write(lines[idx])
-        for idx in double_out:
-            outfile.write(lines[idx])
+    images, energies, positions, labels = import_data(path)
 
 
-def import_data(path=None):
+def import_data(path):
     """ Imports scintillator data as numpy arrays.
     Used together with analysis repository which has a strict folder
     structure.
@@ -153,10 +112,10 @@ def import_data(path=None):
             energy = np.array((line[256], line[259]))
             pos = np.array((line[257], line[258], line[260], line[261]))
 
-            # Set label for the events. If Energy2 is 0 it is a single
+            # Set label for the events. If Pos[3] is -100 it is a single
             # event. Any other values corresponds to a double event.
             # We label single events as type 0, and doubles as type 1
-            if energy[1] == 0:
+            if pos[3] == -100:
                 label = 0
             else:
                 label = 1
@@ -192,8 +151,8 @@ def import_real_data(path, num_samples=None, return_events=True):
                         n samples
 
 
-    returns: dictionary of: { event_id: {event_descriptor: 1,2,3,4, or 5,
-                                         image: array
+    returns: dictionary of: { event_id: {event_descriptor: int,
+                                         image: array,
                                         }
     """
 
