@@ -94,7 +94,7 @@ def generate_dataset_simulated(path, num_samples=None, random_state=None,
     )
 
     # Set filenames
-    if test_size:
+    if test_size is not None:
         training_len = int(images.shape[0] * (1.0 - test_size))
     else:
         training_len = int(images.shape[0] * 0.75)
@@ -102,9 +102,11 @@ def generate_dataset_simulated(path, num_samples=None, random_state=None,
     test_len = int(images.shape[0] - training_len)
 
     data_path = repo_root + "data/simulated/"
-    dt_string = datetime.today().strftime('%Y%m%d%H%M%S')
+    dt_string = datetime.today().strftime('%Y%m%d%H%M')
     training_set_name = "training_" + str(training_len) + "_" + dt_string
     test_set_name = "test_" + str(test_len) + "_" + dt_string
+    print(training_set_name)
+    print(test_set_name)
 
     # Save training files:
     np.save(data_path + "images_" + training_set_name, images[train_idx])
