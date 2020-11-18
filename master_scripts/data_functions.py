@@ -82,7 +82,8 @@ def generate_dataset_simulated(path, num_samples=None, random_state=None,
     """
 
     repo_root = get_git_root()
-
+    print("Importing data from", path)
+    print("This may take some time.")
     images, energies, positions, labels = import_data(path)
 
     # Set indices for train and validation
@@ -105,8 +106,9 @@ def generate_dataset_simulated(path, num_samples=None, random_state=None,
     dt_string = datetime.today().strftime('%Y%m%d%H%M')
     training_set_name = "training_" + str(training_len) + "_" + dt_string
     test_set_name = "test_" + str(test_len) + "_" + dt_string
-    print(training_set_name)
-    print(test_set_name)
+    print("Writing to numpy format...")
+    print("{images, energies, positions, labels}_" + training_set_name)
+    print("{images, energies, positions, labels}_" + test_set_name)
 
     # Save training files:
     np.save(data_path + "images_" + training_set_name, images[train_idx])
