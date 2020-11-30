@@ -186,6 +186,53 @@ def import_real_data(path, num_samples=None, return_events=True):
         return images
 
 
+def import_real_energy_data(path, num_samples=None, return_events=True):
+    """ Imports experimental data containing ddas and fit_energy.
+    Used together with analysis repository which has a strict folder
+    structure.
+
+    param path: config containing paths, modelnames etc.
+
+    param num_samples:  How many samples to include. With large files,
+                        memory might become an issue when loading full file.
+                        If specified, the returned data will be the first
+                        n samples
+
+
+    """
+
+    # Dictionary for storing events
+    events = {}
+    images = []
+    # read line by line to alleviate memory strain when files are large
+    with open(path, "r") as infile:
+        image_idx = 0
+        for line in infile:
+            # If we have the desired amount of samples, return events.
+            if num_samples and len(events.keys()) == num_samples:
+                return events
+
+            line = np.fromstring(line, sep=' ')
+            event_id = int(line[0])
+            event_ddas_energy = int(line[1])
+            event_fit_energy = int(line[2])
+            image = np.array(line[3:], dtype=np.float32).reshape((16, 16, 1))
+            images.append(image)
+            events[event_id] = {
+                "ddas_energy": event_ddas_energy,
+                "fit_energy": event_fit_energy,
+                "image_idx": image_idx
+            }
+            image_idx += 1
+
+    images = np.array(images)
+    # images = np.transpose(images, (0, 2, 1, 3))
+    if return_events:
+        return events, images
+    else:
+        return images
+
+
 def separate_simulated_data(data):
     """Takes an imported dataset and separates it into images, energies
     and positions.
