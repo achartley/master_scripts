@@ -5,6 +5,8 @@ import numpy as np
 import tensorflow as tf
 import pandas as pd
 import subprocess
+from datetime import datetime
+from sklearn.model_selection import train_test_split
 
 
 def get_git_root():
@@ -67,19 +69,58 @@ def get_tf_device(MAX_LOAD):
     return DEVICE
 
 
-def generate_simulated_dataset(path, num_samples=None, random_seed=None,
-                               ratio=None):
+def generate_dataset_simulated(path, num_samples=None, random_state=None,
+                               test_size=None):
     """Generate numpy-format dataset from a scintillator datafile.
 
     Keyword arguments:
     path -- full path to scintillator datafile
     num_samples -- number of samples. If None, use the whole file.
-    random_seed -- set random seed for reproducibility
-    ratio -- ratio of n_test_samples/n_training_samples. E.g 0.1 splits
-             off 10% of the data as test data.
+    random_state -- set random seed for reproducibility
+    test_size -- proportion of the dataset to include in the test data.
+                 E.g 0.1 splits off 10% of the data as test data.
     """
 
+    repo_root = get_git_root()
+    print("Importing data from", path)
+    print("This may take some time.")
     images, energies, positions, labels = import_data(path)
+
+    # Set indices for train and validation
+    x_idx = np.arange(images.shape[0])
+    train_idx, test_idx = train_test_split(
+        x_idx,
+        test_size=test_size,
+        random_state=random_state,
+    )
+
+    # Set filenames
+    if test_size is not None:
+        training_len = int(images.shape[0] * (1.0 - test_size))
+    else:
+        training_len = int(images.shape[0] * 0.75)
+
+    test_len = int(images.shape[0] - training_len)
+
+    data_path = repo_root + "data/simulated/"
+    dt_string = datetime.today().strftime('%Y%m%d%H%M')
+    training_set_name = "training_" + str(training_len) + "_" + dt_string
+    test_set_name = "test_" + str(test_len) + "_" + dt_string
+    print("Writing to numpy format...")
+    print("{images, energies, positions, labels}_" + training_set_name)
+    print("{images, energies, positions, labels}_" + test_set_name)
+
+    # Save training files:
+    np.save(data_path + "images_" + training_set_name, images[train_idx])
+    np.save(data_path + "energies_" + training_set_name, energies[train_idx])
+    np.save(data_path + "positions_" + training_set_name, positions[train_idx])
+    np.save(data_path + "labels_" + training_set_name, labels[train_idx])
+
+    # Save test files:
+    np.save(data_path + "images_" + test_set_name, images[test_idx])
+    np.save(data_path + "energies_" + test_set_name, energies[test_idx])
+    np.save(data_path + "positions_" + test_set_name, positions[test_idx])
+    np.save(data_path + "labels_" + test_set_name, labels[test_idx])
 
 
 def import_data(path):
