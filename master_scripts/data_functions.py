@@ -549,3 +549,22 @@ def load_hparam_search(name):
     df['matthews_corrcoef'] = mcc
     df['roc_auc_score'] = auc
     return df
+
+
+def generate_imbalanced_dataset_indices(positions, double_ratio):
+    """ Generates a set of indices to use for making unbalanced
+    datasets.
+
+    :param positions: array of positions for simulated images
+    :param double_ratio: ratio of doubles included in dataset.
+    all singles will be included, and then num_single*double_ratio
+    doubles will be included.
+    """
+    singles, doubles, close = event_indices(positions)
+    chosen_doubles = np.random.default_rng().choice(
+        doubles,
+        int(singles.shape[0] * double_ratio),
+        replace=True
+    )
+
+    return np.concatenate((singles, chosen_doubles), axis=0)
