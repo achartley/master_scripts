@@ -551,7 +551,8 @@ def load_hparam_search(name):
     return df
 
 
-def generate_imbalanced_dataset_indices(positions, double_ratio):
+def generate_imbalanced_dataset_indices(positions, double_ratio,
+                                        random_seed=None):
     """ Generates a set of indices to use for making unbalanced
     datasets.
 
@@ -560,8 +561,9 @@ def generate_imbalanced_dataset_indices(positions, double_ratio):
     all singles will be included, and then num_single*double_ratio
     doubles will be included.
     """
+    rng = np.random.default_rng(seed=random_seed)
     singles, doubles, close = event_indices(positions)
-    chosen_doubles = np.random.default_rng().choice(
+    chosen_doubles = rng.choice(
         doubles,
         int(singles.shape[0] * double_ratio),
         replace=True
