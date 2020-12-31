@@ -75,10 +75,11 @@ class Experiment:
             'fit_args': {
                 'batch_size': None,
                 'epochs': 1,
+                'verbose': 2,
             },
             'kfold_args': {
                 'n_splits': 5,
-                'shuffle': False,
+                'shuffle': True,
             },
             'path_args': {
                 'repo_root': rpath,
