@@ -170,13 +170,14 @@ class Experiment:
             'val_idx': val_idx.tolist(),
         }
 
-    def run_kfold(self, x, y):
+    def run_kfold(self, x, y, f1_print=False):
         """ Train the model using kfold cross-validation.
         It is assumed that the input data is preprocessed,
         and good to go.
 
         :param x:   input data (batch_size, width, height, channels)
         :param y:   labels / targets
+        :param f1_print: whether to print f1 score after each fold or not.
         """
 
         # Store accuracy for each fold for all models
@@ -215,6 +216,10 @@ class Experiment:
             }
             # Store the history object
             results[foldkey] = history
+
+            if f1_print:
+                print("\n", foldkey, " F1-score: ",
+                      self.metrics_kfold[foldkey]['f1_score'])
 
             fold += 1
         self.history_kfold = results
