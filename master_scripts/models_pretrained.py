@@ -5,7 +5,7 @@ from tensorflow.keras.layers import Flatten, Dense
 
 
 def pretrained_model(which_model="VGG16", input_dim=(16, 16, 3),
-                     output_depth=None):
+                     output_depth=None, trainable=False):
     """ Setup an instance of any model available in tensorflow.keras with
         new input dimensions and a custom depth at which to get the output.
         The goal of this model is to extract features from the new input using
@@ -80,9 +80,10 @@ def pretrained_model(which_model="VGG16", input_dim=(16, 16, 3),
                       breaking the layer addition loop")
                 break
 
-    # Set layers to non-trainable
-    for layer in model.layers:
-        layer.trainable = False
+    # Set layers to non-trainable if trainable is set to false.
+    if not trainable:
+        for layer in model.layers:
+            layer.trainable = False
 
     # Flatten layer to prep for inputting to dense
     model.add(Flatten())
