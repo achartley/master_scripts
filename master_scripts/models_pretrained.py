@@ -1,7 +1,7 @@
 from importlib import import_module
 from tensorflow.keras import Input
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Flatten, Dense
+from tensorflow.keras.layers import Flatten, Dense, Activation
 
 
 def pretrained_model(which_model="VGG16", input_dim=(16, 16, 3),
@@ -86,7 +86,8 @@ def pretrained_model(which_model="VGG16", input_dim=(16, 16, 3),
             layer.trainable = False
 
     # Flatten layer to prep for inputting to dense
-    model.add(Flatten(activation='relu'))
+    model.add(Activation('relu'))
+    model.add(Flatten())
 
     return model
 
