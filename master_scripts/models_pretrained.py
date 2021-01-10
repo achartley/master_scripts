@@ -86,7 +86,6 @@ def pretrained_model(which_model="VGG16", input_dim=(16, 16, 3),
             layer.trainable = False
 
     # Flatten layer to prep for inputting to dense
-    model.add(Activation('relu'))
     model.add(Flatten())
 
     return model
