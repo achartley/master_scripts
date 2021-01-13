@@ -25,7 +25,7 @@ def get_tf_device(MAX_LOAD):
     to use in training or prediction
     """
     DEVICE = None
-
+    MAX_LOAD = 5  # hardcode this to actually spread computation
     # Set memory growth and list logical devices
     if int(tf.__version__[0]) < 2:
         physical_gpu = tf.config.experimental.list_physical_devices('GPU')
