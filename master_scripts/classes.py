@@ -196,6 +196,10 @@ class Experiment:
         for train_idx, val_idx in kf.split(x, y):
             # Set weights to original initialisation.
             self.model = tf.keras.models.clone_model(original_model)
+            self.model.compile(
+                optimizer=self.config['compile_args']['optimizer'],
+                loss=self.config['compile_args']['loss'],
+            )
             # Train model
             history = self.model.fit(
                 x=normalize_image_data(x[train_idx]),
