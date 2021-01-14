@@ -179,6 +179,7 @@ class Experiment:
         :param y:   labels / targets
         :param f1_print: whether to print f1 score after each fold or not.
         """
+        from tf.keras.optimizers import Adam
 
         # Store accuracy for each fold for all models
         results = {}
@@ -190,15 +191,17 @@ class Experiment:
         )
 
         original_model = tf.keras.models.clone_model(self.model)
-        #init_weights = self.model.get_weights()
         # Run k-fold cross-validation
         fold = 0  # Track which fold
         for train_idx, val_idx in kf.split(x, y):
-            # Set weights to original initialisation.
+            # Reinitialize model
             self.model = tf.keras.models.clone_model(original_model)
             self.model.compile(
-                optimizer=self.config['compile_args']['optimizer'],
+                optimizer=Adam(
+                    learning_rate=self.config['compile_args']['adam_lr']
+                ),
                 loss=self.config['compile_args']['loss'],
+                metrics=self.config['compile_args']['metrics']
             )
             # Train model
             history = self.model.fit(
