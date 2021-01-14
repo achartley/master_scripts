@@ -6,6 +6,7 @@ from sklearn.metrics import (matthews_corrcoef, f1_score, confusion_matrix,
                              mean_squared_error, mean_absolute_error)
 from master_scripts.data_functions import get_git_root, normalize_image_data
 import tensorflow as tf
+from tensorflow.keras.optimizers import Adam
 import json
 import warnings
 import hashlib
@@ -179,7 +180,6 @@ class Experiment:
         :param y:   labels / targets
         :param f1_print: whether to print f1 score after each fold or not.
         """
-        from tf.keras.optimizers import Adam
 
         # Store accuracy for each fold for all models
         results = {}
