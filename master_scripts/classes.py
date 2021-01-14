@@ -189,12 +189,13 @@ class Experiment:
             **self.config['kfold_args']
         )
 
-        init_weights = self.model.get_weights()
+        original_model = tf.keras.models.clone_model(self.model)
+        #init_weights = self.model.get_weights()
         # Run k-fold cross-validation
         fold = 0  # Track which fold
         for train_idx, val_idx in kf.split(x, y):
             # Set weights to original initialisation.
-            self.model.set_weights(init_weights)
+            self.model = tf.keras.models.clone_model(original_model)
             # Train model
             history = self.model.fit(
                 x=normalize_image_data(x[train_idx]),
