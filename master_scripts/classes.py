@@ -6,6 +6,7 @@ from sklearn.metrics import (matthews_corrcoef, f1_score, confusion_matrix,
                              mean_squared_error, mean_absolute_error)
 from master_scripts.data_functions import get_git_root, normalize_image_data
 import tensorflow as tf
+from tensorflow.keras.optimizers import Adam
 import json
 import warnings
 import hashlib
@@ -78,10 +79,11 @@ class Experiment:
             'fit_args': {
                 'batch_size': None,
                 'epochs': 1,
+                'verbose': 2,
             },
             'kfold_args': {
                 'n_splits': 5,
-                'shuffle': False,
+                'shuffle': True,
             },
             'path_args': {
                 'repo_root': rpath,
@@ -181,6 +183,7 @@ class Experiment:
             'val_idx': val_idx.tolist(),
         }
 
+<<<<<<< HEAD
     def tune(self, x, y):
         # This is a stripped down version of the "run" method which is designed
         # to accept a hypermodel from the kerastuner framework
@@ -208,13 +211,17 @@ class Experiment:
         )
 
 
-    def run_kfold(self, x, y):
+#    def run_kfold(self, x, y):
+=======
+    def run_kfold(self, x, y, f1_print=False):
+>>>>>>> 10cd9c75e0e7dae8369aa1744a4da82c13e15a87
         """ Train the model using kfold cross-validation.
         It is assumed that the input data is preprocessed,
         and good to go.
 
         :param x:   input data (batch_size, width, height, channels)
         :param y:   labels / targets
+        :param f1_print: whether to print f1 score after each fold or not.
         """
 
         # Store accuracy for each fold for all models
@@ -226,9 +233,19 @@ class Experiment:
             **self.config['kfold_args']
         )
 
+        original_model = tf.keras.models.clone_model(self.model)
         # Run k-fold cross-validation
         fold = 0  # Track which fold
         for train_idx, val_idx in kf.split(x, y):
+            # Reinitialize model
+            self.model = tf.keras.models.clone_model(original_model)
+            self.model.compile(
+                optimizer=Adam(
+                    learning_rate=self.config['compile_args']['adam_lr']
+                ),
+                loss=self.config['compile_args']['loss'],
+                metrics=self.config['compile_args']['metrics']
+            )
             # Train model
             history = self.model.fit(
                 x=normalize_image_data(x[train_idx]),
@@ -254,6 +271,10 @@ class Experiment:
             }
             # Store the history object
             results[foldkey] = history
+
+            if f1_print:
+                print("\n", foldkey, " F1-score: ",
+                      self.metrics_kfold[foldkey]['f1_score'])
 
             fold += 1
         self.history_kfold = results

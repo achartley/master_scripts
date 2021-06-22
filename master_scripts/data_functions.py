@@ -25,7 +25,7 @@ def get_tf_device(MAX_LOAD):
     to use in training or prediction
     """
     DEVICE = None
-
+    MAX_LOAD = 5  # hardcode this to actually spread computation
     # Set memory growth and list logical devices
     if int(tf.__version__[0]) < 2:
         physical_gpu = tf.config.experimental.list_physical_devices('GPU')
@@ -215,6 +215,53 @@ def import_real_data(path, num_samples=None, return_events=True):
             images.append(image)
             events[event_id] = {
                 "event_descriptor": event_descriptor,
+                "image_idx": image_idx
+            }
+            image_idx += 1
+
+    images = np.array(images)
+    # images = np.transpose(images, (0, 2, 1, 3))
+    if return_events:
+        return events, images
+    else:
+        return images
+
+
+def import_real_energy_data(path, num_samples=None, return_events=True):
+    """ Imports experimental data containing ddas and fit_energy.
+    Used together with analysis repository which has a strict folder
+    structure.
+
+    param path: config containing paths, modelnames etc.
+
+    param num_samples:  How many samples to include. With large files,
+                        memory might become an issue when loading full file.
+                        If specified, the returned data will be the first
+                        n samples
+
+
+    """
+
+    # Dictionary for storing events
+    events = {}
+    images = []
+    # read line by line to alleviate memory strain when files are large
+    with open(path, "r") as infile:
+        image_idx = 0
+        for line in infile:
+            # If we have the desired amount of samples, return events.
+            if num_samples and len(events.keys()) == num_samples:
+                return events
+
+            line = np.fromstring(line, sep=' ')
+            event_id = int(line[0])
+            event_ddas_energy = int(line[1])
+            event_fit_energy = int(line[2])
+            image = np.array(line[3:], dtype=np.float32).reshape((16, 16, 1))
+            images.append(image)
+            events[event_id] = {
+                "ddas_energy": event_ddas_energy,
+                "fit_energy": event_fit_energy,
                 "image_idx": image_idx
             }
             image_idx += 1
@@ -504,3 +551,24 @@ def load_hparam_search(name):
     df['matthews_corrcoef'] = mcc
     df['roc_auc_score'] = auc
     return df
+
+
+def generate_imbalanced_dataset_indices(positions, double_ratio,
+                                        random_seed=None):
+    """ Generates a set of indices to use for making unbalanced
+    datasets.
+
+    :param positions: array of positions for simulated images
+    :param double_ratio: ratio of doubles included in dataset.
+    all singles will be included, and then num_single*double_ratio
+    doubles will be included.
+    """
+    rng = np.random.default_rng(seed=random_seed)
+    singles, doubles, close = event_indices(positions)
+    chosen_doubles = rng.choice(
+        doubles,
+        int(singles.shape[0] * double_ratio),
+        replace=True
+    )
+
+    return np.concatenate((singles, chosen_doubles), axis=0)
