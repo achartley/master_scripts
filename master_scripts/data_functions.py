@@ -289,12 +289,14 @@ def label_simulated_data(data):
     return labels
 
 
-def normalize_image_data(images):
+def normalize_image_data(images,img_min=0,img_max=0):
     """ Takes an imported set of images and normalizes values to between
     0 and 1 using min-max scaling across the whole image set.
     """
-    img_max = np.amax(images)
-    img_min = np.amin(images)
+    if img_max == 0:
+        img_max = np.amax(images)
+    if img_min == 0:
+        img_min = np.amin(images)
     images = (images - img_min) / (img_max - img_min)
     return images
 

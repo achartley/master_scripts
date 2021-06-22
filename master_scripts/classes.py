@@ -59,10 +59,13 @@ class Experiment:
         self.history_kfold = None
         self.metrics_kfold = {}
 
+        self.tb_callback = None
         # Set default config and append or replace with provided config.
         self.config = None
         self.set_config(config)
         self.set_experiment_id()
+        log_dir = self.config['path_args']['models'] + self.id
+        self.tb_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
 
     def set_config(self, config):
         """ Set default config for model.fit and additional kfold cross-
@@ -136,6 +139,12 @@ class Experiment:
         :param y:   labels
         """
 
+        # Experiment here where the entire dataset will be normalized
+
+        x = normalize_image_data(x,self.config['data']['min_val'],self.config['data']['max_val'])
+        
+
+
         # Set indices for train and validation
         x_idx = np.arange(x.shape[0])
         train_idx, val_idx = train_test_split(
@@ -145,12 +154,15 @@ class Experiment:
 
         # Train the model
         self.history = self.model.fit(
-            x=normalize_image_data(x[train_idx]),
+            #x=normalize_image_data(x[train_idx]),
+            x=x[train_idx],
             y=y[train_idx],
             validation_data=(
-                normalize_image_data(x[val_idx]),
+                #normalize_image_data(x[val_idx]),
+                x[val_idx],
                 y[val_idx]
             ),
+            callbacks=[self.tb_callback],
             **self.config['fit_args'],
         ).history
 
@@ -168,6 +180,33 @@ class Experiment:
             'train_idx': train_idx.tolist(),
             'val_idx': val_idx.tolist(),
         }
+
+    def tune(self, x, y):
+        # This is a stripped down version of the "run" method which is designed
+        # to accept a hypermodel from the kerastuner framework
+        # The history value isn't set, and other records are not kepr by the
+        # Experiment class, kerastuner does everything needed.
+        # All saving and analysis of models should be done through kerastuner,
+        # therefore the only thing this method should do is accept values from
+        # config files and allow calling tuner.search
+        x = normalize_image_data(x,self.config['data']['min_val'],self.config['data']['max_val'])
+        
+
+
+        # Set indices for train and validation
+        x_idx = np.arange(x.shape[0])
+        train_idx, val_idx = train_test_split(
+            x_idx,
+            random_state=self.config['random_seed']
+        )
+        
+        tuner.search(
+        x=x[train_idx],
+        y=labels[train_idx],
+        validation_data=(x[val_idx], y[val_idx])
+        **self.config['fit_args'],
+        )
+
 
     def run_kfold(self, x, y):
         """ Train the model using kfold cross-validation.
@@ -198,6 +237,7 @@ class Experiment:
                     normalize_image_data(x[val_idx]),
                     y[val_idx]
                 ),
+                callbacks=[self.tb_callback],
                 ** self.config['fit_args'],
             ).history
             # Calculate metrics for the model
